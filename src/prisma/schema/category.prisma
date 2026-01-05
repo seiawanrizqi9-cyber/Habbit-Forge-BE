@@ -1,13 +1,10 @@
 model Category {
-  id          String    @id @default(cuid())
+  id          String    @id @default(uuid())
   name        String    @unique
   description String?
-  icon        String?   // nama icon atau URL
-  color       String?   // kode warna hex
+  color       String?  
+  icon        String? 
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relasi 1:N dengan Habit
   habits      Habit[]
   
   @@map("categories")
