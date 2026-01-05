@@ -1,15 +1,23 @@
 model User {
-  id            Int           @id @default(autoincrement())
-  username      String        @unique
+  id            String        @id @default(cuid())
   email         String        @unique
-  orders        Order[]
-  password_hash String
-  role          String @default("USER")
-  profile       Profile?
-  magicTokens   MagicToken[]
+  password      String        // akan di-hash dengan bcrypt
+  username      String        @unique
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  deletedAt     DateTime?     @db.Timestamptz
-
+  
+  // Relasi 1:1 dengan Profile
+  profile       Profile?
+  
+  // Relasi 1:N dengan Habit
+  habits        Habit[]
+  
+  // Relasi 1:N dengan CheckIn (melalui habit)
+  checkIns      CheckIn[]     @relation("UserCheckIns")
+  
+  // Token untuk reset password (opsional)
+  resetToken    String?
+  resetExpires  DateTime?
+  
   @@map("users")
 }

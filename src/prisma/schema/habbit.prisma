@@ -1,0 +1,36 @@
+model Habit {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  
+  // Waktu dan status
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isActive    Boolean   @default(true)
+  
+  // Target dan pengulangan
+  targetCount Int       @default(1) // berapa kali per hari
+  frequency   String    @default("daily") // daily, weekly, custom
+  customDays  String[]  // untuk custom frequency, misal ["mon", "wed", "fri"]
+  
+  // Metadata
+  icon        String?
+  color       String?
+  
+  // Foreign Keys
+  userId      String
+  categoryId  String?
+  
+  // Relasi
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  // Relasi 1:N dengan CheckIn
+  checkIns    CheckIn[]
+  
+  // Index untuk performa
+  @@index([userId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("habits")
+}

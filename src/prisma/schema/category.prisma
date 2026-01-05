@@ -1,9 +1,14 @@
 model Category {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  icon        String?   // nama icon atau URL
+  color       String?   // kode warna hex
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relasi 1:N dengan Habit
+  habits      Habit[]
+  
   @@map("categories")
-} 
+}

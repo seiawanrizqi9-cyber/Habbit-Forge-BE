@@ -1,0 +1,30 @@
+model CheckIn {
+  id          String    @id @default(cuid())
+  
+  // Tanggal check-in (hanya tanggal, tanpa waktu)
+  date        DateTime  // disimpan sebagai DateTime tapi hanya bagian tanggal yang dipakai
+  
+  // Status dan metadata
+  completed   Boolean   @default(true)
+  note        String?
+  createdAt   DateTime  @default(now())
+  
+  // Foreign Keys
+  habitId     String
+  userId      String    // denormalized untuk query yang lebih cepat
+  
+  // Relasi
+  habit       Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user        User      @relation("UserCheckIns", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // UNIQUE CONSTRAINT: 1 check-in per hari per habit
+  @@unique([habitId, date])
+  
+  // Index untuk performa
+  @@index([habitId])
+  @@index([userId])
+  @@index([date])
+  @@index([habitId, date, completed])
+  
+  @@map("checkins")
+}
