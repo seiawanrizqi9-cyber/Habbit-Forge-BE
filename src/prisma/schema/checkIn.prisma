@@ -5,11 +5,16 @@ model CheckIn {
   date      DateTime  // hanya tanggal (time di-set ke 00:00:00)
   note      String?
   createdAt DateTime  @default(now())
+  
+  // Relations
   habit     Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // PENTING: 1 check-in per hari per habit
   @@unique([habitId, date])
-  @@index([userId, date])
-  @@index([habitId])
+  @@index([userId, date DESC])          // Dashboard query
+  @@index([habitId, date DESC])         // Streak calculation
+  @@index([date])                       // Monthly stats
+  
   @@map("checkins")
 }
