@@ -6,8 +6,7 @@ declare global {
       startTime?: number;
       apikey?: string;
       user?: {
-        id: number;
-        role: string;
+        id: string
       }
     }
   }
