@@ -1,4 +1,3 @@
-// routes/dashboardRoutes.ts
 import express from "express";
 import {
   getDashboard,
@@ -9,26 +8,24 @@ import { authenticate } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
-// Semua route butuh authentication
-router.use(authenticate);
-
 /**
  * @swagger
  * tags:
- *  name: dashboard
- *  description: Manajemen dashboard pengguna
+ *   name: Dashboard
+ *   description: Dashboard data aggregation
  */
 
 /**
  * @swagger
- * /dashboard:
+ * /api/dashboard:
  *   get:
- *     summary: mengambil semua dashboard
+ *     summary: Get dashboard overview
  *     tags: [Dashboard]
- *
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description:  koneksi terhubung
+ *         description: Dashboard data
  *         content:
  *           application/json:
  *             schema:
@@ -40,28 +37,47 @@ router.use(authenticate);
  *                   type: string
  *                 data:
  *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *                   properties:
+ *                     totalHabits:
+ *                       type: integer
+ *                     activeHabits:
+ *                       type: integer
+ *                     totalCheckIns:
+ *                       type: integer
+ *                     streak:
+ *                       type: integer
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
-
-// GET /api/dashboard
-router.get("/", getDashboard);
+router.get("/", authenticate, getDashboard);
 
 /**
  * @swagger
- * /dashboard/today:
+ * /api/dashboard/today:
  *   get:
- *     summary: mengambil semua Kategori
+ *     summary: Get today's habits with check-in status
  *     tags: [Dashboard]
- *
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description:  koneksi terhubung
+ *         description: Today's habits list
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/today", authenticate, getTodayHabits);
+
+/**
+ * @swagger
+ * /api/dashboard/stats:
+ *   get:
+ *     summary: Get detailed statistics
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistics data
  *         content:
  *           application/json:
  *             schema:
@@ -73,47 +89,24 @@ router.get("/", getDashboard);
  *                   type: string
  *                 data:
  *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *                   properties:
+ *                     habitsByCategory:
+ *                       type: object
+ *                     last7Days:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           date:
+ *                             type: string
+ *                             format: date
+ *                           checkIns:
+ *                             type: integer
+ *                     monthlyCompletion:
+ *                       type: integer
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
-// GET /api/dashboard/today
-router.get("/today", getTodayHabits);
-
-/**
- * @swagger
- * /dashboard/stats:
- *   get:
- *     summary: menyortir bagian dashboard
- *     tags: [Dashboard]
- *
- *     responses:
- *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
- *       401:
- *         description: koneksi tidak terhubung
- */
-// GET /api/dashboard/stats
-router.get("/stats", getStats);
+router.get("/stats", authenticate, getStats);
 
 export default router;

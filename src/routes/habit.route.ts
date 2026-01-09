@@ -3,8 +3,8 @@ import { HabitController } from "../controller/habit.controller";
 import { HabitRepository } from "../repository/habit.repository";
 import { HabitService } from "../service/habit.service";
 import { authenticate } from "../middleware/auth.middleware";
-import prismaInstance from "../database";
 import { checkHabitOwnership } from "../middleware/ownership.middleware";
+import prismaInstance from "../database";
 
 const repo = new HabitRepository(prismaInstance);
 const service = new HabitService(repo);
@@ -15,103 +15,52 @@ const router = Router();
 /**
  * @swagger
  * tags:
- *  name: Book
- *  description: Manajemen book pengguna
+ *   name: Habits
+ *   description: Habit management
  */
 
 /**
  * @swagger
- * /book:
+ * /api/habit:
  *   get:
- *     summary: mengambil semua book
- *     tags: [Book]
+ *     summary: Get all habits for current user
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - name: page
- *         in: query
- *         required: false
+ *       - in: query
+ *         name: page
  *         schema:
  *           type: integer
- *           example: 1
- *       - name: limit
- *         in: query
- *         required: false
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
  *         schema:
  *           type: integer
- *           example: 10
- *
+ *           default: 10
+ *         description: Items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by habit title
  *     responses:
  *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *         description: List of habits
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
 router.get("/", authenticate, controller.getAllHabitHandler);
 
 /**
  * @swagger
- * /book/{id}:
- *   get:
- *     summary: mencari book berdasarkan ID
- *     tags: [Book]
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: ID book yang dicari
- *         schema:
- *           type: integer
- *
- *     responses:
- *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
- *       401:
- *         description: koneksi tidak terhubung
- */
-
-router.get("/:id", 
-  authenticate, 
-  checkHabitOwnership,
-  controller.getHabitByIdHandler
-);
-
-/**
- * @swagger
- * /book/{id}:
+ * /api/habit:
  *   post:
- *     summary: membuat Book baru
- *     tags: [Book]
+ *     summary: Create new habit
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -120,67 +69,163 @@ router.get("/:id",
  *             type: object
  *             required:
  *               - title
- *               - userId
- *
  *             properties:
  *               title:
  *                 type: string
- *                 format: title
- *                 example:  "hina pemerintah 12 reps"
+ *                 minLength: 3
+ *                 maxLength: 100
+ *                 example: "Minum air 8 gelas"
  *               description:
  *                 type: string
- *                 nullable: true
- *                 format: description
- *                 example: "rutinitas ini diperlukan untuk memperlancar peredaran darah"
+ *                 maxLength: 500
+ *                 example: "Minimal 8 gelas air setiap hari"
  *               isActive:
  *                 type: boolean
- *                 format: isActive
+ *                 default: true
  *                 example: true
- *               userId:
+ *               categoryId:
  *                 type: string
  *                 format: uuid
- *                 example: "550e8400-e29b-41d4-a716-446655440000"
- *               categoryId:
- *                  type: string
- *                  format: uuid
- *                  example: "660e8400-e29b-41d4-a716-446655440001"
- *
+ *                 example: "550e8400-e29b-41d4-a716-446655440001"
  *     responses:
- *       200:
- *         description: data berhasil masuk
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *       201:
+ *         description: Habit created successfully
+ *       400:
+ *         description: Validation error
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
 router.post("/", authenticate, controller.createHabitHandler);
 
-router.put("/:id", 
-  authenticate, 
-  checkHabitOwnership, 
-  controller.updateHabitHandler
-);
+/**
+ * @swagger
+ * /api/habit/{id}:
+ *   get:
+ *     summary: Get habit by ID
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Habit ID
+ *     responses:
+ *       200:
+ *         description: Habit details
+ *       404:
+ *         description: Habit not found
+ *       403:
+ *         description: Forbidden (not owner)
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/:id", authenticate, checkHabitOwnership, controller.getHabitByIdHandler);
 
-router.delete("/:id", 
-  authenticate, 
-  checkHabitOwnership,
-  controller.deleteHabitHandler
-);
+/**
+ * @swagger
+ * /api/habit/{id}:
+ *   put:
+ *     summary: Update habit
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Habit ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 100
+ *               description:
+ *                 type: string
+ *                 maxLength: 500
+ *               isActive:
+ *                 type: boolean
+ *               categoryId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Habit updated successfully
+ *       404:
+ *         description: Habit not found
+ *       403:
+ *         description: Forbidden (not owner)
+ *       401:
+ *         description: Unauthorized
+ */
+router.put("/:id", authenticate, checkHabitOwnership, controller.updateHabitHandler);
 
-router.put("/:id/toggle", authenticate, controller.toggleHabitHandler);
+/**
+ * @swagger
+ * /api/habit/{id}:
+ *   delete:
+ *     summary: Delete habit (soft delete)
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Habit ID
+ *     responses:
+ *       200:
+ *         description: Habit deleted successfully
+ *       404:
+ *         description: Habit not found
+ *       403:
+ *         description: Forbidden (not owner)
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete("/:id", authenticate, checkHabitOwnership, controller.deleteHabitHandler);
+
+/**
+ * @swagger
+ * /api/habit/{id}/toggle:
+ *   put:
+ *     summary: Toggle habit active status
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Habit ID
+ *     responses:
+ *       200:
+ *         description: Habit status toggled
+ *       404:
+ *         description: Habit not found
+ *       403:
+ *         description: Forbidden (not owner)
+ *       401:
+ *         description: Unauthorized
+ */
+router.put("/:id/toggle", authenticate, checkHabitOwnership, controller.toggleHabitHandler);
 
 export default router;

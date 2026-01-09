@@ -3,8 +3,11 @@ import { CheckInController } from "../controller/checkIn.controller";
 import { CheckInRepository } from "../repository/checkIn.repository";
 import { CheckInService } from "../service/checkIn.service";
 import { authenticate } from "../middleware/auth.middleware";
+import { 
+  checkHabitAccessForCheckIn, 
+  checkCheckInOwnership 
+} from "../middleware/ownership.middleware";
 import prismaInstance from "../database";
-import { checkHabitAccessForCheckIn } from "../middleware/ownership.middleware";
 
 const repo = new CheckInRepository(prismaInstance);
 const service = new CheckInService(repo);
@@ -14,41 +17,47 @@ const router = Router();
 
 /**
  * @swagger
- * /CheckIn/{id}:
- *   get:
- *     summary: menyortir bagian checkIn
- *     tags: [Category]
- *
- *     responses:
- *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
- *       401:
- *         description: koneksi tidak terhubung
+ * tags:
+ *   name: CheckIns
+ *   description: Daily check-in management
  */
-router.get("/:id", authenticate, controller.getCheckInByIdHandler);
 
 /**
  * @swagger
- * /checkIn/{id}:
+ * /api/checkIn/{id}:
+ *   get:
+ *     summary: Get check-in by ID
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Check-in ID
+ *     responses:
+ *       200:
+ *         description: Check-in details
+ *       404:
+ *         description: Check-in not found
+ *       403:
+ *         description: Forbidden (not owner)
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/:id", authenticate, checkCheckInOwnership, controller.getCheckInByIdHandler);
+
+/**
+ * @swagger
+ * /api/checkIn:
  *   post:
- *     summary: membuat Book baru
- *     tags: [Book]
+ *     summary: Create daily check-in
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -57,154 +66,93 @@ router.get("/:id", authenticate, controller.getCheckInByIdHandler);
  *             type: object
  *             required:
  *               - habitId
- *               - userId
- *               - date
- *
  *             properties:
  *               habitId:
- *                 type: habitId
- *                 format: uuid
- *                 example: "123e4567-e89b-12d3-a456-426614174000"
- *               userId:
- *                 type: userId
- *                 format: uuid
- *                 example: "456e4567-e89b-12d3-a456-426614174001"
- *               date:
  *                 type: string
- *                 format: date
- *                 example: "Tanggal check-in (format YYYY-MM-DD)"
+ *                 format: uuid
+ *                 example: "550e8400-e29b-41d4-a716-446655440000"
  *               note:
  *                 type: string
- *                 format: note
- *                 example: "Hari ini berhasil olahraga 30 menit"
- *
+ *                 maxLength: 500
+ *                 example: "Sudah minum 8 gelas hari ini"
  *     responses:
- *       200:
- *         description: data berhasil masuk
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *       201:
+ *         description: Check-in created successfully
+ *       400:
+ *         description: Already checked in today
+ *       404:
+ *         description: Habit not found or not active
+ *       403:
+ *         description: Forbidden (not owner)
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
-
-router.post(
-  "/",
-  authenticate,
-  checkHabitAccessForCheckIn, 
-  controller.createCheckInHandler
-);
+router.post("/", authenticate, checkHabitAccessForCheckIn, controller.createCheckInHandler);
 
 /**
  * @swagger
- * /checkIn/{id}:
+ * /api/checkIn/{id}:
  *   put:
- *     summary: melakukan update pada checkIn
- *     tags: [Book]
+ *     summary: Update check-in note
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - name: id
- *         in: path
+ *       - in: path
+ *         name: id
  *         required: true
- *         description: ID checkIn yang akan diupdate
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
+ *         description: Check-in ID
  *     requestBody:
- *       required: true
+ *       required: false
  *       content:
  *         application/json:
  *           schema:
  *             type: object
  *             properties:
- *               habitId:
- *                 type: habitId
- *                 format: uuid
- *                 example: "123e4567-e89b-12d3-a456-426614174000"
- *               userId:
- *                 type: userId
- *                 format: uuid
- *                 example: "456e4567-e89b-12d3-a456-426614174001"
- *               date:
- *                 type: string
- *                 format: date
- *                 example: "Tanggal check-in (format YYYY-MM-DD)"
  *               note:
  *                 type: string
- *                 format: note
- *                 example: "Hari ini berhasil olahraga 30 menit"
- *
+ *                 maxLength: 500
  *     responses:
  *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *         description: Check-in updated successfully
+ *       404:
+ *         description: Check-in not found
+ *       403:
+ *         description: Forbidden (not owner)
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
-router.put("/:id", authenticate, controller.updateCheckInHandler);
+router.put("/:id", authenticate, checkCheckInOwnership, controller.updateCheckInHandler);
 
 /**
  * @swagger
- * /checkIn/{id}:
+ * /api/checkIn/{id}:
  *   delete:
- *     summary: menghapus checkIn
- *     tags: [Book]
+ *     summary: Delete check-in
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - name: id
- *         in: path
+ *       - in: path
+ *         name: id
  *         required: true
- *         description: ID checkIn yang akan dihapus
  *         schema:
- *           type: integer
- *
+ *           type: string
+ *           format: uuid
+ *         description: Check-in ID
  *     responses:
  *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *         description: Check-in deleted successfully
+ *       404:
+ *         description: Check-in not found
+ *       403:
+ *         description: Forbidden (not owner)
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
-router.delete("/:id", authenticate, controller.deleteCheckInHandler);
+router.delete("/:id", authenticate, checkCheckInOwnership, controller.deleteCheckInHandler);
 
 export default router;

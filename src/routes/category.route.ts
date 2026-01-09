@@ -10,85 +10,88 @@ const service = new CategoryService(repo);
 const controller = new CategoryController(service);
 
 const router = Router();
+
 /**
  * @swagger
  * tags:
- *  name: Category
- *  description: Manajemen kategori pengguna
+ *   name: Categories
+ *   description: Category management
  */
 
 /**
  * @swagger
- * /category:
+ * /api/category:
  *   get:
- *     summary: mengambil semua Kategori
- *     tags: [Category]
+ *     summary: Get all categories
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - name: page
- *         in: query
- *         required: false
+ *       - in: query
+ *         name: page
  *         schema:
  *           type: integer
- *           example: 1
- *       - name: limit
- *         in: query
- *         required: false
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
  *         schema:
  *           type: integer
- *           example: 10
- *
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by category name
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [name, createdAt]
+ *           default: createdAt
+ *         description: Sort field
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order
  *     responses:
  *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *         description: List of categories
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
 router.get("/", authenticate, controller.getAllCategoryHandler);
 
 /**
  * @swagger
- * /category/{id}:
+ * /api/category/{id}:
  *   get:
- *     summary: menyortir bagian kategori
- *     tags: [Category]
- *
+ *     summary: Get category by ID
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Category ID
  *     responses:
  *       200:
- *         description:  koneksi terhubung
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                 pagination:
- *                   type: object
- *                 errors:
- *                   type: object
- *
+ *         description: Category details
+ *       404:
+ *         description: Category not found
  *       401:
- *         description: koneksi tidak terhubung
+ *         description: Unauthorized
  */
 router.get("/:id", authenticate, controller.getCategoryByIdHandler);
 
