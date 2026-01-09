@@ -1,19 +1,16 @@
-import { Router } from "express"
+import { Router } from "express";
 import { CheckInController } from "../controller/checkIn.controller";
 import { CheckInRepository } from "../repository/checkIn.repository";
 import { CheckInService } from "../service/checkIn.service";
 import { authenticate } from "../middleware/auth.middleware";
-import prismaIntance from "../database";
+import prismaInstance from "../database";
+import { checkHabitAccessForCheckIn } from "../middleware/ownership.middleware";
 
+const repo = new CheckInRepository(prismaInstance);
+const service = new CheckInService(repo);
+const controller = new CheckInController(service);
 
-
-const repo = new CheckInRepository(prismaIntance)
-const service = new CheckInService(repo)
-const controller = new CheckInController(service)
-
-
-const router = Router()
-
+const router = Router();
 
 /**
  * @swagger
@@ -21,7 +18,7 @@ const router = Router()
  *   get:
  *     summary: menyortir bagian checkIn
  *     tags: [Category]
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -40,12 +37,11 @@ const router = Router()
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.get('/:id', authenticate, controller.getCheckInByIdHandler);
-
+router.get("/:id", authenticate, controller.getCheckInByIdHandler);
 
 /**
  * @swagger
@@ -63,17 +59,17 @@ router.get('/:id', authenticate, controller.getCheckInByIdHandler);
  *               - habitId
  *               - userId
  *               - date
- * 
+ *
  *             properties:
  *               habitId:
  *                 type: habitId
  *                 format: uuid
  *                 example: "123e4567-e89b-12d3-a456-426614174000"
- *               userId: 
+ *               userId:
  *                 type: userId
  *                 format: uuid
  *                 example: "456e4567-e89b-12d3-a456-426614174001"
- *               date: 
+ *               date:
  *                 type: string
  *                 format: date
  *                 example: "Tanggal check-in (format YYYY-MM-DD)"
@@ -81,7 +77,7 @@ router.get('/:id', authenticate, controller.getCheckInByIdHandler);
  *                 type: string
  *                 format: note
  *                 example: "Hari ini berhasil olahraga 30 menit"
- *              
+ *
  *     responses:
  *       200:
  *         description: data berhasil masuk
@@ -100,12 +96,17 @@ router.get('/:id', authenticate, controller.getCheckInByIdHandler);
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.post('/', authenticate, controller.createCheckInHandler);
 
+router.post(
+  "/",
+  authenticate,
+  checkHabitAccessForCheckIn, 
+  controller.createCheckInHandler
+);
 
 /**
  * @swagger
@@ -131,11 +132,11 @@ router.post('/', authenticate, controller.createCheckInHandler);
  *                 type: habitId
  *                 format: uuid
  *                 example: "123e4567-e89b-12d3-a456-426614174000"
- *               userId: 
+ *               userId:
  *                 type: userId
  *                 format: uuid
  *                 example: "456e4567-e89b-12d3-a456-426614174001"
- *               date: 
+ *               date:
  *                 type: string
  *                 format: date
  *                 example: "Tanggal check-in (format YYYY-MM-DD)"
@@ -143,7 +144,7 @@ router.post('/', authenticate, controller.createCheckInHandler);
  *                 type: string
  *                 format: note
  *                 example: "Hari ini berhasil olahraga 30 menit"
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -162,13 +163,11 @@ router.post('/', authenticate, controller.createCheckInHandler);
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.put('/:id', authenticate, controller.updateCheckInHandler)
-
-
+router.put("/:id", authenticate, controller.updateCheckInHandler);
 
 /**
  * @swagger
@@ -183,7 +182,7 @@ router.put('/:id', authenticate, controller.updateCheckInHandler)
  *         description: ID checkIn yang akan dihapus
  *         schema:
  *           type: integer
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -202,13 +201,10 @@ router.put('/:id', authenticate, controller.updateCheckInHandler)
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.delete('/:id', authenticate, controller.deleteCheckInHandler );
+router.delete("/:id", authenticate, controller.deleteCheckInHandler);
 
-
-
-export default router
-
+export default router;

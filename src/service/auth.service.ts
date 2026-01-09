@@ -8,57 +8,103 @@ export const register = async (data: {
     email: string;
     password: string;
 }) => {
-    const existingUser = await prisma.user.findUnique({ where: { email: data.email } })
+    // Cek email sudah terdaftar
+    const existingUser = await prisma.user.findUnique({ 
+        where: { email: data.email } 
+    });
+    
     if (existingUser) {
-        throw new Error("Email sudah terdaftar")
+        throw new Error("Email sudah terdaftar");
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, 10)
+    // Cek username sudah terdaftar
+    const existingUsername = await prisma.user.findUnique({
+        where: { username: data.username }
+    });
+    
+    if (existingUsername) {
+        throw new Error("Username sudah terdaftar");
+    }
 
-    const user =  await prisma.user.create({
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Buat user beserta profile
+    const user = await prisma.user.create({
         data: {
             email: data.email,
             username: data.username,
             password: hashedPassword,
+            profile: {
+                create: {
+                    fullName: data.username
+                }
+            }
+        },
+        include: {
+            profile: true
         }
-    })
+    });
+
+    // ⭐ GENERATE TOKEN SETELAH REGISTER
+    const token = jwt.sign(
+        { 
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: 'user'
+        },
+        config.JWT_SECRET,
+        { expiresIn: '7d' }
+    );
 
     return {
-        email: user.email,
-        username: user.username,
-    }
-}
-
+        user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            profile: user.profile
+        },
+        token
+    };
+};
 
 export const login = async (data: { email: string; password: string }) => {
     const user = await prisma.user.findUnique({
-        where: { email: data.email }
-    })
+        where: { email: data.email },
+        include: { profile: true }
+    });
+    
     if (!user) {
-        const error = new Error("Email atau password salah")
-        error.name = "AuthenticationError" 
-        throw error
+        throw new Error("Email atau password salah");
     }
 
-    const isValid = await bcrypt.compare(data.password, user.password)
+    const isValid = await bcrypt.compare(data.password, user.password);
     if (!isValid) {
-        throw new Error("Email atau password salah")
+        throw new Error("Email atau password salah");
     }
 
+    // ⭐ PERBAIKAN JWT
     const token = jwt.sign(
-        { id: user.id },
+        { 
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: 'user'
+        },
         config.JWT_SECRET,
-        { expiresIn: '1h' }
-    )
+        { expiresIn: '7d' } // ⭐ 1 jam → 7 hari
+    );
 
     const userReturn = {
+        id: user.id,
         email: user.email,
         username: user.username,
-    }
+        profile: user.profile,
+        createdAt: user.createdAt
+    };
 
-    return { userReturn, token }
-}
-
+    return { user: userReturn, token };
+};
 
 export const getCurrentUser = async (userId: string) => {
     const user = await prisma.user.findUnique({

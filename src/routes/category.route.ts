@@ -1,23 +1,21 @@
-import { Router } from "express"
+import { Router } from "express";
 import { CategoryController } from "../controller/category.controller";
 import { CategoryRepository } from "../repository/category.repository";
 import { CategoryService } from "../service/category.service";
 import { authenticate } from "../middleware/auth.middleware";
-import prismaIntance from "../database";
+import prismaInstance from "../database";
 
-const repo = new CategoryRepository(prismaIntance)
-const service = new CategoryService(repo)
-const controller = new CategoryController(service)
+const repo = new CategoryRepository(prismaInstance);
+const service = new CategoryService(repo);
+const controller = new CategoryController(service);
 
-const router = Router()
+const router = Router();
 /**
  * @swagger
  * tags:
  *  name: Category
  *  description: Manajemen kategori pengguna
  */
-
-
 
 /**
  * @swagger
@@ -38,7 +36,7 @@ const router = Router()
  *         schema:
  *           type: integer
  *           example: 10
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -57,13 +55,11 @@ const router = Router()
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.get('/', authenticate, controller.getAllCategoryHandler)
-
-
+router.get("/", authenticate, controller.getAllCategoryHandler);
 
 /**
  * @swagger
@@ -71,7 +67,7 @@ router.get('/', authenticate, controller.getAllCategoryHandler)
  *   get:
  *     summary: menyortir bagian kategori
  *     tags: [Category]
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -90,10 +86,10 @@ router.get('/', authenticate, controller.getAllCategoryHandler)
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.get('/:id', authenticate, controller.getCategoryByIdHandler)
+router.get("/:id", authenticate, controller.getCategoryByIdHandler);
 
-export default router
+export default router;

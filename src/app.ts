@@ -1,5 +1,4 @@
 import express, { type Application, type NextFunction, type Request, type Response } from "express";
-import { upload } from './middleware/upload.middleware';
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from 'cors'
@@ -22,29 +21,10 @@ app.use(helmet())
 app.use(cors())
 app.use(morgan("dev"))
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.set("query parser", "extended")
 app.use(express.static("public"))
-
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const contentType = req.headers['content-type'] || '';
-  
-  if (contentType.includes('multipart/form-data')) {
-    upload.none()(req, res, (err) => {
-      if (err) {
-        console.error('Multer error:', err);
-        return res.status(400).json({
-          success: false,
-          message: 'Error parsing form data'
-        });
-      }
-      next();
-    });
-  } else {
-    next();
-  }
-})
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`${req.method}: ${req.path}`);

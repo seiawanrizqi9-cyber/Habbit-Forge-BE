@@ -44,7 +44,5 @@ export class CategoryRepository implements ICategoryRepository {
                 habit: true,
             }
         })
-    }
-
-    
+    } 
 }

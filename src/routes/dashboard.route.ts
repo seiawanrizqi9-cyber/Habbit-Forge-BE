@@ -1,11 +1,11 @@
 // routes/dashboardRoutes.ts
-import express from 'express';
-import { 
-  getDashboard, 
-  getTodayHabits, 
-  getStats 
-} from '../controller/dashboard.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import express from "express";
+import {
+  getDashboard,
+  getTodayHabits,
+  getStats,
+} from "../controller/dashboard.controller";
+import { authenticate } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -19,15 +19,13 @@ router.use(authenticate);
  *  description: Manajemen dashboard pengguna
  */
 
-
-
 /**
  * @swagger
  * /dashboard:
  *   get:
  *     summary: mengambil semua dashboard
  *     tags: [Dashboard]
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -46,15 +44,13 @@ router.use(authenticate);
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
 
 // GET /api/dashboard
-router.get('/', getDashboard);
-
-
+router.get("/", getDashboard);
 
 /**
  * @swagger
@@ -62,7 +58,7 @@ router.get('/', getDashboard);
  *   get:
  *     summary: mengambil semua Kategori
  *     tags: [Dashboard]
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -81,13 +77,12 @@ router.get('/', getDashboard);
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
 // GET /api/dashboard/today
-router.get('/today', getTodayHabits);
-
+router.get("/today", getTodayHabits);
 
 /**
  * @swagger
@@ -95,7 +90,7 @@ router.get('/today', getTodayHabits);
  *   get:
  *     summary: menyortir bagian dashboard
  *     tags: [Dashboard]
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -114,11 +109,11 @@ router.get('/today', getTodayHabits);
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
 // GET /api/dashboard/stats
-router.get('/stats', getStats);
+router.get("/stats", getStats);
 
 export default router;

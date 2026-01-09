@@ -1,17 +1,16 @@
-import { Router } from "express"
+import { Router } from "express";
 import { HabitController } from "../controller/habit.controller";
 import { HabitRepository } from "../repository/habit.repository";
 import { HabitService } from "../service/habit.service";
 import { authenticate } from "../middleware/auth.middleware";
-import prismaIntance from "../database";
+import prismaInstance from "../database";
+import { checkHabitOwnership } from "../middleware/ownership.middleware";
 
+const repo = new HabitRepository(prismaInstance);
+const service = new HabitService(repo);
+const controller = new HabitController(service);
 
-const repo = new HabitRepository(prismaIntance)
-const service = new HabitService(repo)
-const controller = new HabitController(service)
-
-
-const router = Router()
+const router = Router();
 
 /**
  * @swagger
@@ -39,7 +38,7 @@ const router = Router()
  *         schema:
  *           type: integer
  *           example: 10
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -58,12 +57,11 @@ const router = Router()
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.get('/', authenticate, controller.getAllHabitHandler)
-
+router.get("/", authenticate, controller.getAllHabitHandler);
 
 /**
  * @swagger
@@ -78,7 +76,7 @@ router.get('/', authenticate, controller.getAllHabitHandler)
  *         description: ID book yang dicari
  *         schema:
  *           type: integer
- *              
+ *
  *     responses:
  *       200:
  *         description:  koneksi terhubung
@@ -97,13 +95,16 @@ router.get('/', authenticate, controller.getAllHabitHandler)
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
 
-router.get('/:id', authenticate, controller.getHabitByIdHandler);
-
+router.get("/:id", 
+  authenticate, 
+  checkHabitOwnership,
+  controller.getHabitByIdHandler
+);
 
 /**
  * @swagger
@@ -120,18 +121,18 @@ router.get('/:id', authenticate, controller.getHabitByIdHandler);
  *             required:
  *               - title
  *               - userId
- * 
+ *
  *             properties:
  *               title:
  *                 type: string
  *                 format: title
  *                 example:  "hina pemerintah 12 reps"
- *               description: 
+ *               description:
  *                 type: string
  *                 nullable: true
  *                 format: description
  *                 example: "rutinitas ini diperlukan untuk memperlancar peredaran darah"
- *               isActive: 
+ *               isActive:
  *                 type: boolean
  *                 format: isActive
  *                 example: true
@@ -143,7 +144,7 @@ router.get('/:id', authenticate, controller.getHabitByIdHandler);
  *                  type: string
  *                  format: uuid
  *                  example: "660e8400-e29b-41d4-a716-446655440001"
- *              
+ *
  *     responses:
  *       200:
  *         description: data berhasil masuk
@@ -162,18 +163,24 @@ router.get('/:id', authenticate, controller.getHabitByIdHandler);
  *                   type: object
  *                 errors:
  *                   type: object
- *                  
+ *
  *       401:
  *         description: koneksi tidak terhubung
  */
-router.post('/', authenticate, controller.createHabitHandler);
+router.post("/", authenticate, controller.createHabitHandler);
 
+router.put("/:id", 
+  authenticate, 
+  checkHabitOwnership, 
+  controller.updateHabitHandler
+);
 
+router.delete("/:id", 
+  authenticate, 
+  checkHabitOwnership,
+  controller.deleteHabitHandler
+);
 
-router.put('/:id', authenticate, controller.updateHabitHandler)
+router.put("/:id/toggle", authenticate, controller.toggleHabitHandler);
 
-router.delete('/:id', authenticate,  controller.deleteHabitHandler );
-
-router.put("/api/habits/:id/toggle", authenticate, controller.toggleHabitHandler)
-
-export default router
+export default router;

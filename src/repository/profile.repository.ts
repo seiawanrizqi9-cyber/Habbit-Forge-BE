@@ -33,13 +33,5 @@ export class ProfileRepository implements IProfileRepository {
         ...(data.avatar !== undefined && { avatar: data.avatar })
       }
     });
-  }
-
-    
-
-    
-
-    
-
-    
+  } 
 }
