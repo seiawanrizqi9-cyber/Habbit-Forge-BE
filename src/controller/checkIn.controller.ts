@@ -10,10 +10,10 @@ export class CheckInController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const checkIn = await this.checkInService.getCheckInByIdForUser(
-      req.params.id!, 
-      userId
-    );
+    const checkInId = req.params.id;
+    if (!checkInId) throw new Error("CheckIn ID diperlukan");
+
+    const checkIn = await this.checkInService.getCheckInById(checkInId, userId);
     successResponse(res, "CheckIn berhasil diambil", checkIn);
   });
 
@@ -21,12 +21,16 @@ export class CheckInController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const checkIn = await this.checkInService.createCheckIn({
-      habitId: req.body.habitId,
-      userId,
-      note: req.body.note
-    });
+    const { habitId, note } = req.body;
     
+    if (!habitId) throw new Error("Habit ID diperlukan");
+
+    const checkIn = await this.checkInService.createCheckIn({
+      habitId,
+      userId,
+      note
+    });
+
     successResponse(res, "CheckIn berhasil dibuat", checkIn, null, 201);
   });
 
@@ -34,8 +38,11 @@ export class CheckInController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
+    const checkInId = req.params.id;
+    if (!checkInId) throw new Error("CheckIn ID diperlukan");
+
     const checkIn = await this.checkInService.updateCheckIn(
-      req.params.id!, 
+      checkInId, 
       req.body, 
       userId
     );
@@ -47,10 +54,10 @@ export class CheckInController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const deleted = await this.checkInService.deleteCheckIn(
-      req.params.id!, 
-      userId
-    );
+    const checkInId = req.params.id;
+    if (!checkInId) throw new Error("CheckIn ID diperlukan");
+
+    const deleted = await this.checkInService.deleteCheckIn(checkInId, userId);
     
     successResponse(res, "CheckIn berhasil dihapus", deleted);
   });

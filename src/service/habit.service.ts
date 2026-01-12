@@ -19,9 +19,8 @@ export interface HabitListResponse {
 }
 
 export interface IHabitService {
-  getAll(params: FindAllParams, userId?: string): Promise<HabitListResponse>;
-  getHabitById(id: string): Promise<Habit>;
-  getHabitByIdForUser(id: string, userId: string): Promise<Habit>;
+  getAll(params: FindAllParams, userId: string): Promise<HabitListResponse>;
+  getHabitById(id: string, userId: string): Promise<Habit>;
   createHabit(data: {
     title: string;
     description?: string;
@@ -29,25 +28,22 @@ export interface IHabitService {
     userId: string;
     categoryId?: string;
   }): Promise<Habit>;
-  updateHabit(id: string, data: Partial<Habit>, userId?: string): Promise<Habit>;
-  deleteHabit(id: string, userId?: string): Promise<Habit>;
+  updateHabit(id: string, data: Partial<Habit>, userId: string): Promise<Habit>;
+  deleteHabit(id: string, userId: string): Promise<Habit>;
   toggleHabit(id: string, userId: string): Promise<Habit>;
 }
 
 export class HabitService implements IHabitService {
   constructor(private habitRepo: IHabitRepository) {}
 
-  async getAll(params: FindAllParams, userId?: string): Promise<HabitListResponse> {
+  async getAll(params: FindAllParams, userId: string): Promise<HabitListResponse> {
     const { page, limit, search, sortBy, sortOrder } = params;
 
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.HabitWhereInput = {};
-
-    // ⭐ FILTER BY USER ID JIKA ADA
-    if (userId) {
-      whereClause.userId = userId;
-    }
+    const whereClause: Prisma.HabitWhereInput = {
+      userId: userId // Auto-filter by user
+    };
 
     if (search?.title) {
       whereClause.title = { contains: search.title, mode: "insensitive" };
@@ -74,24 +70,16 @@ export class HabitService implements IHabitService {
     };
   }
 
-  async getHabitById(id: string): Promise<Habit> {
-    const habit = await this.habitRepo.findById(id);
-    if (!habit) {
-      throw new Error("Habit tidak ditemukan");
-    }
-
-    return habit;
-  }
-
-  async getHabitByIdForUser(id: string, userId: string): Promise<Habit> {
+  async getHabitById(id: string, userId: string): Promise<Habit> {
     const habit = await this.habitRepo.findById(id);
     
     if (!habit) {
       throw new Error("Habit tidak ditemukan");
     }
     
+    // Auto-validate ownership
     if (habit.userId !== userId) {
-      throw new Error("Akses ditolak: Habit bukan milik Anda");
+      throw new Error("Habit tidak ditemukan");
     }
     
     return habit;
@@ -123,28 +111,22 @@ export class HabitService implements IHabitService {
     return await this.habitRepo.create(habitData);
   }
 
-  async updateHabit(id: string, data: Partial<Habit>, userId?: string): Promise<Habit> {
-    // Validasi ownership jika userId disediakan
-    if (userId) {
-      await this.getHabitByIdForUser(id, userId);
-    } else {
-      await this.getHabitById(id);
-    }
+  async updateHabit(id: string, data: Partial<Habit>, userId: string): Promise<Habit> {
+    // Validasi ownership
+    await this.getHabitById(id, userId);
 
     return await this.habitRepo.update(id, data);
   }
 
-  async deleteHabit(id: string, userId?: string): Promise<Habit> {
-    // Validasi ownership jika userId disediakan
-    if (userId) {
-      await this.getHabitByIdForUser(id, userId);
-    }
+  async deleteHabit(id: string, userId: string): Promise<Habit> {
+    // Validasi ownership
+    await this.getHabitById(id, userId);
 
     return await this.habitRepo.softDelete(id);
   }
 
   async toggleHabit(id: string, userId: string): Promise<Habit> {
-    const habit = await this.getHabitByIdForUser(id, userId);
+    const habit = await this.getHabitById(id, userId);
     
     return await this.habitRepo.update(id, {
       isActive: !habit.isActive

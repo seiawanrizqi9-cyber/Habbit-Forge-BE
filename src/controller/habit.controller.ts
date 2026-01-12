@@ -8,9 +8,7 @@ export class HabitController {
 
   getAllHabitHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
+    if (!userId) throw new Error("Unauthorized");
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -26,7 +24,7 @@ export class HabitController {
         sortBy,
         sortOrder,
       },
-      userId // ⭐ KIRIM USER ID UNTUK FILTER
+      userId // ⭐ KIRIM userId
     );
 
     const pagination = {
@@ -46,30 +44,22 @@ export class HabitController {
 
   getHabitByIdHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
+    if (!userId) throw new Error("Unauthorized");
 
     const habitId = req.params.id;
-    if (!habitId) {
-      throw new Error("Habit ID diperlukan");
-    }
+    if (!habitId) throw new Error("Habit ID diperlukan");
 
-    const habit = await this.habitService.getHabitByIdForUser(habitId, userId);
+    const habit = await this.habitService.getHabitById(habitId, userId);
     successResponse(res, "Habit berhasil diambil", habit);
   });
 
   createHabitHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
+    if (!userId) throw new Error("Unauthorized");
 
     const { title, description, isActive, categoryId } = req.body;
     
-    if (!title) {
-      throw new Error("Title diperlukan");
-    }
+    if (!title) throw new Error("Title diperlukan");
 
     const habit = await this.habitService.createHabit({
       title,
@@ -84,14 +74,10 @@ export class HabitController {
 
   updateHabitHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
+    if (!userId) throw new Error("Unauthorized");
 
     const habitId = req.params.id;
-    if (!habitId) {
-      throw new Error("Habit ID diperlukan");
-    }
+    if (!habitId) throw new Error("Habit ID diperlukan");
 
     const habit = await this.habitService.updateHabit(habitId, req.body, userId);
     successResponse(res, "Habit berhasil diupdate", habit);
@@ -99,14 +85,10 @@ export class HabitController {
 
   deleteHabitHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
+    if (!userId) throw new Error("Unauthorized");
 
     const habitId = req.params.id;
-    if (!habitId) {
-      throw new Error("Habit ID diperlukan");
-    }
+    if (!habitId) throw new Error("Habit ID diperlukan");
 
     const deleted = await this.habitService.deleteHabit(habitId, userId);
     successResponse(res, "Habit berhasil dihapus", deleted);
@@ -114,14 +96,10 @@ export class HabitController {
 
   toggleHabitHandler = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
+    if (!userId) throw new Error("Unauthorized");
 
     const habitId = req.params.id;
-    if (!habitId) {
-      throw new Error("Habit ID diperlukan");
-    }
+    if (!habitId) throw new Error("Habit ID diperlukan");
 
     const toggledHabit = await this.habitService.toggleHabit(habitId, userId);
     

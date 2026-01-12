@@ -45,7 +45,7 @@ export const register = async (data: {
         }
     });
 
-    // ⭐ GENERATE TOKEN SETELAH REGISTER
+    // Generate token setelah register
     const token = jwt.sign(
         { 
             id: user.id,
@@ -83,7 +83,6 @@ export const login = async (data: { email: string; password: string }) => {
         throw new Error("Email atau password salah");
     }
 
-    // ⭐ PERBAIKAN JWT
     const token = jwt.sign(
         { 
             id: user.id,
@@ -92,7 +91,7 @@ export const login = async (data: { email: string; password: string }) => {
             role: 'user'
         },
         config.JWT_SECRET,
-        { expiresIn: '7d' } // ⭐ 1 jam → 7 hari
+        { expiresIn: '7d' }
     );
 
     const userReturn = {

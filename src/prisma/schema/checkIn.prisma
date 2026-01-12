@@ -2,7 +2,7 @@ model CheckIn {
   id        String    @id @default(uuid())
   habitId   String
   userId    String
-  date      DateTime  // hanya tanggal (time di-set ke 00:00:00)
+  date      DateTime  
   note      String?
   createdAt DateTime  @default(now())
   habit     Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
