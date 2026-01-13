@@ -16,13 +16,6 @@ const router = Router();
 
 /**
  * @swagger
- * tags:
- *   name: Profile
- *   description: User profile management
- */
-
-/**
- * @swagger
  * /api/profile:
  *   get:
  *     summary: Get current user profile
@@ -34,10 +27,7 @@ const router = Router();
  *         description: Profile details
  *       404:
  *         description: Profile not found
- *       401:
- *         description: Unauthorized
  */
-
 router.get("/", authenticate, controller.getProfileByIdHandler);
 
 /**
@@ -49,7 +39,6 @@ router.get("/", authenticate, controller.getProfileByIdHandler);
  *     security:
  *       - bearerAuth: []
  *     requestBody:
- *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
@@ -58,11 +47,9 @@ router.get("/", authenticate, controller.getProfileByIdHandler);
  *               fullName:
  *                 type: string
  *                 maxLength: 100
- *                 example: "John Doe"
  *               bio:
  *                 type: string
  *                 maxLength: 500
- *                 example: "Suka olahraga dan belajar hal baru"
  *               avatar:
  *                 type: string
  *                 format: binary
@@ -72,10 +59,7 @@ router.get("/", authenticate, controller.getProfileByIdHandler);
  *         description: Profile updated successfully
  *       400:
  *         description: Validation error
- *       401:
- *         description: Unauthorized
  */
-
 router.put(
   "/",
   authenticate,

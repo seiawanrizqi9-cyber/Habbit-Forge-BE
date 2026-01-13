@@ -12,15 +12,3 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.register(req.body);
   successResponse(res, "Registrasi berhasil", result, null, 201);
 });
-
-export const meController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
-
-    const result = await authService.getCurrentUser(userId);
-    successResponse(res, "User data retrieved", result);
-  }
-);

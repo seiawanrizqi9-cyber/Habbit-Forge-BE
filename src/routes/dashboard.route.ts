@@ -10,13 +10,6 @@ const router = express.Router();
 
 /**
  * @swagger
- * tags:
- *   name: Dashboard
- *   description: Dashboard data aggregation
- */
-
-/**
- * @swagger
  * /api/dashboard:
  *   get:
  *     summary: Get dashboard overview
@@ -26,28 +19,6 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: Dashboard data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     totalHabits:
- *                       type: integer
- *                     activeHabits:
- *                       type: integer
- *                     totalCheckIns:
- *                       type: integer
- *                     streak:
- *                       type: integer
- *       401:
- *         description: Unauthorized
  */
 router.get("/", authenticate, getDashboard);
 
@@ -62,8 +33,6 @@ router.get("/", authenticate, getDashboard);
  *     responses:
  *       200:
  *         description: Today's habits list
- *       401:
- *         description: Unauthorized
  */
 router.get("/today", authenticate, getTodayHabits);
 
@@ -78,34 +47,6 @@ router.get("/today", authenticate, getTodayHabits);
  *     responses:
  *       200:
  *         description: Statistics data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     habitsByCategory:
- *                       type: object
- *                     last7Days:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           date:
- *                             type: string
- *                             format: date
- *                           checkIns:
- *                             type: integer
- *                     monthlyCompletion:
- *                       type: integer
- *       401:
- *         description: Unauthorized
  */
 router.get("/stats", authenticate, getStats);
 

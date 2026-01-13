@@ -13,13 +13,6 @@ const router = Router();
 
 /**
  * @swagger
- * tags:
- *   name: Categories
- *   description: Category management
- */
-
-/**
- * @swagger
  * /api/category:
  *   get:
  *     summary: Get all categories
@@ -33,7 +26,6 @@ const router = Router();
  *           type: integer
  *           minimum: 1
  *           default: 1
- *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
@@ -41,31 +33,14 @@ const router = Router();
  *           minimum: 1
  *           maximum: 100
  *           default: 10
- *         description: Items per page
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
  *         description: Search by category name
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [name, createdAt]
- *           default: createdAt
- *         description: Sort field
- *       - in: query
- *         name: sortOrder
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *           default: desc
- *         description: Sort order
  *     responses:
  *       200:
  *         description: List of categories
- *       401:
- *         description: Unauthorized
  */
 router.get("/", authenticate, controller.getAllCategoryHandler);
 
@@ -84,14 +59,11 @@ router.get("/", authenticate, controller.getAllCategoryHandler);
  *         schema:
  *           type: string
  *           format: uuid
- *         description: Category ID
  *     responses:
  *       200:
  *         description: Category details
  *       404:
  *         description: Category not found
- *       401:
- *         description: Unauthorized
  */
 router.get("/:id", authenticate, controller.getCategoryByIdHandler);
 
