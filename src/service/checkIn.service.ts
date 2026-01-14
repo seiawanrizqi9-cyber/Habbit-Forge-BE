@@ -1,4 +1,4 @@
-import type { CheckIn } from "../generated";
+import type { CheckIn } from "../../dist/generated";
 import type { ICheckInRepository } from "../repository/checkIn.repository";
 import prisma from "../database";
 

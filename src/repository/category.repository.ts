@@ -1,4 +1,4 @@
-import type {  Prisma, PrismaClient, Category } from "../generated";
+import type {  Prisma, PrismaClient, Category } from "../../dist/generated";
 
 export interface ICategoryRepository {
     list(

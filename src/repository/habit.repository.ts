@@ -1,4 +1,4 @@
-import type {  Prisma, PrismaClient, Habit } from "../generated";
+import type {  Prisma, PrismaClient, Habit } from "../../dist/generated";
 
 export interface IHabitRepository {
     list(

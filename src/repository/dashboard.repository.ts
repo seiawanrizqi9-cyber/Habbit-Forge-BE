@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated";
+import { PrismaClient } from "../../dist/generated";
 
 export class DashboardRepository {
   constructor(private prisma: PrismaClient) {}
