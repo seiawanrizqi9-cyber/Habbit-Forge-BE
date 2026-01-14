@@ -43,7 +43,6 @@ app.get('/', (_req: Request, res: Response) => {
     documentation: '/api-docs',
     test_endpoint: '/api/test/connection',
     endpoints: {
-      test: '/api/test',
       auth: '/api/auth',
       user: '/api/user',
       habits: '/api/habit',
