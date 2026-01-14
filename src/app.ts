@@ -14,7 +14,7 @@ import profileRoutes from './routes/profile.route'
 import dashboardRoutes from './routes/dashboard.route'
 import statRoutes from './routes/stat.route'
 import userRoutes from './routes/user.route'
-import testRoutes from './routes/test.route'
+
 
 const app: Application = express()
 
@@ -56,7 +56,6 @@ app.get('/', (_req: Request, res: Response) => {
   })
 })
 
-app.use('/api/test', testRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/category', categoryRoutes)
 app.use('/api/checkIn', checkInRoutes)

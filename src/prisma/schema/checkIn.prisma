@@ -2,24 +2,14 @@ model CheckIn {
   id        String    @id @default(uuid())
   habitId   String
   userId    String
-  date      DateTime  
+  date      DateTime
   note      String?
   createdAt DateTime  @default(now())
-  
-  // Relations
   habit     Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // PENTING: 1 check-in per hari per habit
   @@unique([habitId, date])
-<<<<<<< HEAD
-  @@index([userId, date DESC])          // Dashboard query
-  @@index([habitId, date DESC])         // Streak calculation
-  @@index([date])                       // Monthly stats
-  
-=======
-  @@index([userId, date])               
+  @@index([userId, date])
   @@index([habitId])
->>>>>>> punyaku
   @@map("checkins")
 }
