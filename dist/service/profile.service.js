@@ -3,10 +3,10 @@ export class ProfileService {
     constructor(profileRepo) {
         this.profileRepo = profileRepo;
     }
-    async getProfileById(id) {
-        const profile = await this.profileRepo.findByUserId(id);
+    async getProfileByUserId(userId) {
+        const profile = await this.profileRepo.findByUserId(userId);
         if (!profile) {
-            throw new Error('Profile tidak ditemukan');
+            throw new Error("Profile tidak ditemukan");
         }
         return profile;
     }

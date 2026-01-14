@@ -11,19 +11,34 @@ export class CheckInRepository {
             orderBy,
             include: {
                 habit: true,
-                user: true
-            }
+                user: true,
+            },
         });
     }
     async findById(id) {
         return await this.prisma.checkIn.findUnique({
             where: {
-                id
+                id,
             },
             include: {
                 habit: true,
-                user: true
-            }
+                user: true,
+            },
+        });
+    }
+    async findTodayCheckIn(habitId, date) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+        return await this.prisma.checkIn.findFirst({
+            where: {
+                habitId,
+                date: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
         });
     }
     async create(data) {
@@ -34,7 +49,7 @@ export class CheckInRepository {
             where: {
                 id,
             },
-            data
+            data,
         });
     }
     async softDelete(id) {
@@ -42,7 +57,7 @@ export class CheckInRepository {
             where: {
                 id,
             },
-            data: {}
+            data: {},
         });
     }
 }

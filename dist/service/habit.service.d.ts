@@ -9,48 +9,41 @@ interface FindAllParams {
     sortBy?: string;
     sortOrder?: "asc" | "desc";
 }
-export interface HabitListRespone {
+export interface HabitListResponse {
     habit: Habit[];
     total: number;
     totalPages: number;
     currentPage: number;
 }
 export interface IHabitService {
-    getAll(params: FindAllParams): Promise<HabitListRespone>;
-    getHabitById(id: string): Promise<Habit | null>;
+    getAll(params: FindAllParams, userId: string): Promise<HabitListResponse>;
+    getHabitById(id: string, userId: string): Promise<Habit>;
     createHabit(data: {
         title: string;
-        description: string;
-        isActive: boolean;
+        description?: string;
+        isActive?: boolean;
         userId: string;
+        categoryId?: string;
     }): Promise<Habit>;
-    updateHabit(id: string, data: Partial<Habit>): Promise<Habit>;
-    deleteHabit(id: string): Promise<Habit>;
-    toggleHabit(id: string): Promise<Habit>;
+    updateHabit(id: string, data: Partial<Habit>, userId: string): Promise<Habit>;
+    deleteHabit(id: string, userId: string): Promise<Habit>;
+    toggleHabit(id: string, userId: string): Promise<Habit>;
 }
 export declare class HabitService implements IHabitService {
     private habitRepo;
     constructor(habitRepo: IHabitRepository);
-    getAll(params: FindAllParams): Promise<HabitListRespone>;
-    getHabitById(id: string): Promise<Habit | null>;
+    getAll(params: FindAllParams, userId: string): Promise<HabitListResponse>;
+    getHabitById(id: string, userId: string): Promise<Habit>;
     createHabit(data: {
         title: string;
-        description: string;
-        isActive: boolean;
+        description?: string;
+        isActive?: boolean;
         userId: string;
+        categoryId?: string;
     }): Promise<Habit>;
-    updateHabit(id: string, data: Partial<Habit>): Promise<Habit>;
-    deleteHabit(id: string): Promise<{
-        id: string;
-        description: string | null;
-        createdAt: Date;
-        title: string;
-        isActive: boolean;
-        updatedAt: Date;
-        userId: string;
-        categoryId: string | null;
-    }>;
-    toggleHabit(id: string): Promise<Habit>;
+    updateHabit(id: string, data: Partial<Habit>, userId: string): Promise<Habit>;
+    deleteHabit(id: string, userId: string): Promise<Habit>;
+    toggleHabit(id: string, userId: string): Promise<Habit>;
 }
 export {};
 //# sourceMappingURL=habit.service.d.ts.map

@@ -11,6 +11,6 @@ const getPrisma = () => {
     }
     return prisma;
 };
-const prismaIntance = getPrisma();
-export default prismaIntance;
+const prismaInstance = getPrisma();
+export default prismaInstance;
 //# sourceMappingURL=database.js.map

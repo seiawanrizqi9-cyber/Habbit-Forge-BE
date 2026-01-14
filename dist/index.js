@@ -1,7 +1,12 @@
 import app from "./app.js";
 import config from "./utils/env.js";
-app.listen(config.PORT, () => {
-    console.log(`Server Erunning at ${config.HOST}:${config.PORT}`);
-    console.log(`Jangan lupa kirim header: X-API-Key: secret-api-key-123`);
+const PORT = Number(config.PORT) || 10000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📚 Documentation: /api-docs`);
+    console.log(`✅ Health check: /`);
+    if (config.NODE_ENV === "development") {
+        console.log(`🔗 Local: http://localhost:${PORT}`);
+    }
 });
 //# sourceMappingURL=index.js.map

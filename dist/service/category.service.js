@@ -10,7 +10,9 @@ export class CategoryService {
         if (search?.name) {
             whereClause.name = { contains: search.name, mode: "insensitive" };
         }
-        const sortCriteria = sortBy ? { [sortBy]: sortOrder || "desc" } : { createdAt: "desc" };
+        const sortCriteria = sortBy ?
+            { [sortBy]: sortOrder || "desc" } :
+            { createdAt: "desc" };
         const category = await this.categoryRepo.list(skip, limit, whereClause, sortCriteria);
         const total = await this.categoryRepo.countAll(whereClause);
         return {

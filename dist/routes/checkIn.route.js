@@ -3,14 +3,119 @@ import { CheckInController } from "../controller/checkIn.controller.js";
 import { CheckInRepository } from "../repository/checkIn.repository.js";
 import { CheckInService } from "../service/checkIn.service.js";
 import { authenticate } from "../middleware/auth.middleware.js";
-import prismaIntance from "../database.js";
-const repo = new CheckInRepository(prismaIntance);
+import { validate } from "../utils/validation.js";
+import { createCheckInValidation, updateCheckInValidation } from "../middleware/checkIn.validation.js";
+import prismaInstance from "../database.js";
+const repo = new CheckInRepository(prismaInstance);
 const service = new CheckInService(repo);
 const controller = new CheckInController(service);
 const router = Router();
+/**
+ * @swagger
+ * /checkIn/{id}:
+ *   get:
+ *     summary: Get check-in by ID
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Check-in details
+ *       404:
+ *         description: Check-in not found
+ */
 router.get("/:id", authenticate, controller.getCheckInByIdHandler);
-router.post("/", authenticate, controller.createCheckInHandler);
-router.put("/:id", authenticate, controller.updateCheckInHandler);
+/**
+ * @swagger
+ * /checkIn:
+ *   post:
+ *     summary: Create daily check-in
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - habitId
+ *             properties:
+ *               habitId:
+ *                 type: string
+ *                 format: uuid
+ *               note:
+ *                 type: string
+ *                 maxLength: 500
+ *     responses:
+ *       201:
+ *         description: Check-in created successfully
+ *       400:
+ *         description: Already checked in today or habit not active
+ *       404:
+ *         description: Habit not found
+ */
+router.post("/", authenticate, validate(createCheckInValidation), controller.createCheckInHandler);
+/**
+ * @swagger
+ * /checkIn/{id}:
+ *   put:
+ *     summary: Update check-in note
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               note:
+ *                 type: string
+ *                 maxLength: 500
+ *     responses:
+ *       200:
+ *         description: Check-in updated successfully
+ *       404:
+ *         description: Check-in not found
+ */
+router.put("/:id", authenticate, validate(updateCheckInValidation), controller.updateCheckInHandler);
+/**
+ * @swagger
+ * /checkIn/{id}:
+ *   delete:
+ *     summary: Delete check-in
+ *     tags: [CheckIns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Check-in deleted successfully
+ *       404:
+ *         description: Check-in not found
+ */
 router.delete("/:id", authenticate, controller.deleteCheckInHandler);
 export default router;
 //# sourceMappingURL=checkIn.route.js.map

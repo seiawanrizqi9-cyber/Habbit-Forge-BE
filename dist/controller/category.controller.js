@@ -1,38 +1,28 @@
 import { successResponse } from "../utils/response.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 export class CategoryController {
     categoryService;
     constructor(categoryService) {
         this.categoryService = categoryService;
-        this.getAllCategoryHandler = this.getAllCategoryHandler.bind(this);
-        this.getCategoryByIdHandler = this.getCategoryByIdHandler.bind(this);
     }
-    async getAllCategoryHandler(req, res) {
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const search = req.query.search;
-        const sortBy = req.query.sortBy;
-        const sortOrder = req.query.sortOrder || "desc";
+    getAllCategoryHandler = asyncHandler(async (req, res) => {
         const result = await this.categoryService.getAll({
-            page,
-            limit,
-            search,
-            sortBy,
-            sortOrder
+            page: Number(req.query.page) || 1,
+            limit: Number(req.query.limit) || 10,
+            search: req.query.search,
+            sortBy: req.query.sortBy,
+            sortOrder: req.query.sortOrder || "desc"
         });
-        const pagination = {
+        successResponse(res, "Daftar kategori berhasil diambil", result.category, {
             page: result.currentPage,
-            limit,
+            limit: Number(req.query.limit) || 10,
             total: result.total,
-            totalPages: result.totalPages
-        };
-        successResponse(res, "buku berhasil ditambahkan", result.category, pagination);
-    }
-    async getCategoryByIdHandler(req, res) {
-        if (!req.params.id) {
-            throw new Error("tidak ada param");
-        }
+            totalPages: result.totalPages,
+        });
+    });
+    getCategoryByIdHandler = asyncHandler(async (req, res) => {
         const category = await this.categoryService.getCategoryById(req.params.id);
-        successResponse(res, "kategori sudah ditemukan", category);
-    }
+        successResponse(res, "Kategori berhasil diambil", category);
+    });
 }
 //# sourceMappingURL=category.controller.js.map

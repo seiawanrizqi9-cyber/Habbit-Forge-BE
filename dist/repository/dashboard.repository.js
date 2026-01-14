@@ -1,4 +1,3 @@
-// repositories/DashboardRepository.ts
 import { PrismaClient } from "../../dist/generated/index.js";
 export class DashboardRepository {
     prisma;

@@ -1,21 +1,27 @@
 import { successResponse } from "../utils/response.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 export class ProfileController {
     profileService;
     constructor(profileService) {
         this.profileService = profileService;
-        this.getProfileByIdHandler = this.getProfileByIdHandler.bind(this);
-        this.updateProfileHandler = this.updateProfileHandler.bind(this);
     }
-    async getProfileByIdHandler(req, res) {
-        if (!req.params.id) {
-            throw new Error("tidak ada param");
+    getProfileByIdHandler = asyncHandler(async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            throw new Error("Unauthorized");
+        const profile = await this.profileService.getProfileByUserId(userId);
+        successResponse(res, "Profile berhasil diambil", profile);
+    });
+    updateProfileHandler = asyncHandler(async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            throw new Error("Unauthorized");
+        const updateData = { ...req.body };
+        if (req.file) {
+            updateData.avatar = `/uploads/${req.file.filename}`;
         }
-        const profile = await this.profileService.getProfileById(req.params.id);
-        successResponse(res, "profile sudah diambil", profile);
-    }
-    async updateProfileHandler(req, res) {
-        const profile = await this.profileService.updateProfile(req.params.id, req.body);
-        successResponse(res, "buku berhasil di update", profile);
-    }
+        const profile = await this.profileService.updateProfile(userId, updateData);
+        successResponse(res, "Profile berhasil diupdate", profile);
+    });
 }
 //# sourceMappingURL=profile.controller.js.map

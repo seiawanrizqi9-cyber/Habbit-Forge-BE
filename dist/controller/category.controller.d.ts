@@ -1,13 +1,9 @@
 import type { Request, Response } from "express";
 import type { ICategoryService } from "../service/category.service.js";
-export interface ICategoryController {
-    getAllCategoryHandler(req: Request, res: Response): Promise<void>;
-    getCategoryByIdHandler(req: Request, res: Response): Promise<void>;
-}
-export declare class CategoryController implements ICategoryController {
+export declare class CategoryController {
     private categoryService;
     constructor(categoryService: ICategoryService);
-    getAllCategoryHandler(req: Request, res: Response): Promise<void>;
-    getCategoryByIdHandler(req: Request, res: Response): Promise<void>;
+    getAllCategoryHandler: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    getCategoryByIdHandler: (req: Request, res: Response, next: import("express").NextFunction) => void;
 }
 //# sourceMappingURL=category.controller.d.ts.map

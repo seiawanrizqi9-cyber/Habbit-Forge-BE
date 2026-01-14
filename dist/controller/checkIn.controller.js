@@ -1,41 +1,53 @@
 import { successResponse } from "../utils/response.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 export class CheckInController {
     checkInService;
     constructor(checkInService) {
         this.checkInService = checkInService;
-        this.getCheckInByIdHandler = this.getCheckInByIdHandler.bind(this);
-        this.createCheckInHandler = this.createCheckInHandler.bind(this);
-        this.updateCheckInHandler = this.updateCheckInHandler.bind(this);
-        this.deleteCheckInHandler = this.deleteCheckInHandler.bind(this);
     }
-    async getCheckInByIdHandler(req, res) {
-        if (!req.params.id) {
-            throw new Error("tidak ada param");
-        }
-        const checkIn = await this.checkInService.getCheckInById(req.params.id);
-        successResponse(res, "checkIn sudah diambil", checkIn);
-    }
-    async createCheckInHandler(req, res) {
-        const { habitId, userId, note } = req.body;
-        const data = {
-            habitId: habitId.toString(),
-            userId: userId.toString(),
-            note: note.toString(),
-        };
-        const checkIns = await this.checkInService.createCheckIn(data);
-        successResponse(res, "checkIn berhasil ditambakan", checkIns, null, 201);
-    }
-    async updateCheckInHandler(req, res) {
-        const checkIn = await this.checkInService.updateCheckIn(req.params.id, req.body);
-        successResponse(res, "checkIn berhasil di update", checkIn);
-    }
-    async deleteCheckInHandler(req, res) {
-        const deleted = await this.checkInService.deleteCheckIn(req.params.id);
-        res.json({
-            success: true,
-            message: "kategoti berhasil dihapus",
-            data: deleted
+    getCheckInByIdHandler = asyncHandler(async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            throw new Error("Unauthorized");
+        const checkInId = req.params.id;
+        if (!checkInId)
+            throw new Error("CheckIn ID diperlukan");
+        const checkIn = await this.checkInService.getCheckInById(checkInId, userId);
+        successResponse(res, "CheckIn berhasil diambil", checkIn);
+    });
+    createCheckInHandler = asyncHandler(async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            throw new Error("Unauthorized");
+        const { habitId, note } = req.body;
+        if (!habitId)
+            throw new Error("Habit ID diperlukan");
+        const checkIn = await this.checkInService.createCheckIn({
+            habitId,
+            userId,
+            note
         });
-    }
+        successResponse(res, "CheckIn berhasil dibuat", checkIn, null, 201);
+    });
+    updateCheckInHandler = asyncHandler(async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            throw new Error("Unauthorized");
+        const checkInId = req.params.id;
+        if (!checkInId)
+            throw new Error("CheckIn ID diperlukan");
+        const checkIn = await this.checkInService.updateCheckIn(checkInId, req.body, userId);
+        successResponse(res, "CheckIn berhasil diupdate", checkIn);
+    });
+    deleteCheckInHandler = asyncHandler(async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            throw new Error("Unauthorized");
+        const checkInId = req.params.id;
+        if (!checkInId)
+            throw new Error("CheckIn ID diperlukan");
+        const deleted = await this.checkInService.deleteCheckIn(checkInId, userId);
+        successResponse(res, "CheckIn berhasil dihapus", deleted);
+    });
 }
 //# sourceMappingURL=checkIn.controller.js.map

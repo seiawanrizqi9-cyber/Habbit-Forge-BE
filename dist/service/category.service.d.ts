@@ -9,21 +9,21 @@ interface FindAllParams {
     sortBy?: string;
     sortOrder?: "asc" | "desc";
 }
-export interface CategoryListRespone {
+export interface CategoryListResponse {
     category: Category[];
     total: number;
     totalPages: number;
     currentPage: number;
 }
 export interface ICategoryService {
-    getAll(params: FindAllParams): Promise<CategoryListRespone>;
-    getCategoryById(id: string): Promise<Category | null>;
+    getAll(params: FindAllParams): Promise<CategoryListResponse>;
+    getCategoryById(id: string): Promise<Category>;
 }
 export declare class CategoryService implements ICategoryService {
     private categoryRepo;
     constructor(categoryRepo: ICategoryRepository);
-    getAll(params: FindAllParams): Promise<CategoryListRespone>;
-    getCategoryById(id: string): Promise<Category | null>;
+    getAll(params: FindAllParams): Promise<CategoryListResponse>;
+    getCategoryById(id: string): Promise<Category>;
 }
 export {};
 //# sourceMappingURL=category.service.d.ts.map

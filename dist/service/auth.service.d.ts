@@ -1,35 +1,10 @@
-export declare const register: (data: {
-    username: string;
-    email: string;
-    password: string;
-}) => Promise<{
-    email: string;
-    username: string;
-}>;
-export declare const login: (data: {
-    email: string;
-    password: string;
-}) => Promise<{
-    userReturn: {
-        email: string;
-        username: string;
-    };
+export declare const register: (data: import("./user.service.js").RegisterData) => Promise<{
+    user: import("./user.service.js").UserProfile;
     token: string;
 }>;
-export declare const getCurrentUser: (userId: string) => Promise<{
-    id: string;
-    createdAt: Date;
-    updatedAt: Date;
-    profile: {
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: string;
-        fullName: string | null;
-        bio: string | null;
-        avatar: string | null;
-    } | null;
-    email: string;
-    username: string;
+export declare const login: (data: import("./user.service.js").LoginData) => Promise<{
+    user: import("./user.service.js").UserProfile;
+    token: string;
 }>;
+export declare const getCurrentUser: (userId: string) => Promise<import("./user.service.js").UserProfile>;
 //# sourceMappingURL=auth.service.d.ts.map
