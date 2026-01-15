@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, CheckIn } from "../../dist/generated";
+import type { Prisma, PrismaClient, CheckIn } from "../../dist/generated/index.js";
 export interface ICheckInRepository {
     list(skip: number, take: number, where: Prisma.CheckInWhereInput, orderBy: Prisma.CheckInOrderByWithRelationInput): Promise<CheckIn[]>;
     findById(id: string): Promise<CheckIn | null>;

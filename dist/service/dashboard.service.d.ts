@@ -1,19 +1,26 @@
-import { DashboardRepository } from "../repository/dashboard.repository";
+import { DashboardRepository } from "../repository/dashboard.repository.js";
 export declare class DashboardService {
     private dashboardRepo;
     constructor(dashboardRepo: DashboardRepository);
     getDashboard(userId: string): Promise<{
-        totalHabits: any;
-        activeHabits: any;
-        totalCheckIns: any;
+        totalHabits: number;
+        activeHabits: number;
+        totalCheckIns: number;
         streak: number;
     }>;
-    getTodayHabits(userId: string): Promise<any>;
+    getTodayHabits(userId: string): Promise<{
+        id: string;
+        title: string;
+        description: string | null;
+        category: string;
+        isCompleted: boolean;
+        checkInTime: Date | null;
+    }[]>;
     getStats(userId: string): Promise<{
         habitsByCategory: Record<string, number>;
         last7Days: {
             date: string | undefined;
-            checkIns: any;
+            checkIns: number;
         }[];
         monthlyCompletion: number;
     }>;

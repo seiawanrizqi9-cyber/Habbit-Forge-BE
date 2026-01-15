@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import { errorResponse } from "../utils/response";
-import config from "../utils/env";
+import { errorResponse } from "../utils/response.js";
+import config from "../utils/env.js";
 export const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {

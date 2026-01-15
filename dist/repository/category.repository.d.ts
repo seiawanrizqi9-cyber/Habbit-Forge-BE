@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, Category } from "../../dist/generated";
+import type { Prisma, PrismaClient, Category } from "../../dist/generated/index.js";
 export interface ICategoryRepository {
     list(skip: number, take: number, where: Prisma.CategoryWhereInput, orderBy: Prisma.CategoryOrderByWithRelationInput): Promise<Category[]>;
     countAll(where: Prisma.CategoryWhereInput): Promise<number>;

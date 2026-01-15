@@ -1,7 +1,7 @@
 import request from "supertest";
-import app from "../app";
+import app from "../app.js";
 import jwt from "jsonwebtoken";
-import config from "../utils/env";
+import config from "../utils/env.js";
 describe("POST /api/habit/:id/checkin", () => {
     const token = jwt.sign({ id: "user-checkin-123" }, config.JWT_SECRET);
     let habitId;
@@ -14,7 +14,7 @@ describe("POST /api/habit/:id/checkin", () => {
             .field("userId", "user-checkin-123")
             .set("Authorization", `Bearer ${token}`);
         // ✅ FORMAT: response.body.id (bukan response.body.data.id)
-        console.log("🔍 DEBUG Habit Response:");
+        console.log("\uD83D\uDD0D DEBUG Habit Response:");
         console.log("Status:", habitRes.status);
         console.log("Body:", JSON.stringify(habitRes.body, null, 2));
         if (habitRes.body.id) {
@@ -24,10 +24,10 @@ describe("POST /api/habit/:id/checkin", () => {
             habitId = habitRes.body.data.id;
         }
         else {
-            console.log("❌ Could not find habit ID, using fallback");
+            console.log("\u274C Could not find habit ID, using fallback");
             habitId = "test-habit-id-123";
         }
-        console.log("✅ Habit ID:", habitId);
+        console.log("\u2705 Habit ID:", habitId);
     });
     it("should return 201 and create check-in", async () => {
         const res = await request(app)
@@ -35,7 +35,7 @@ describe("POST /api/habit/:id/checkin", () => {
             .field("note", "Did it successfully today!")
             .field("userId", "user-checkin-123")
             .set("Authorization", `Bearer ${token}`);
-        console.log("🔍 Check-in Response:");
+        console.log("\uD83D\uDD0D Check-in Response:");
         console.log("Status:", res.status);
         console.log("Body:", JSON.stringify(res.body, null, 2));
         expect(res.statusCode).toEqual(201);

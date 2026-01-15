@@ -1,6 +1,6 @@
 import express from "express";
-import { getDashboard, getTodayHabits, getStats, } from "../controller/dashboard.controller";
-import { authenticate } from "../middleware/auth.middleware";
+import { getDashboard, getTodayHabits, getStats, } from "../controller/dashboard.controller.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 const router = express.Router();
 /**
  * @swagger

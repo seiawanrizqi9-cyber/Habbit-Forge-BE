@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { IProfileService } from "../service/profile.service";
+import type { IProfileService } from "../service/profile.service.js";
 export declare class ProfileController {
     private profileService;
     constructor(profileService: IProfileService);
