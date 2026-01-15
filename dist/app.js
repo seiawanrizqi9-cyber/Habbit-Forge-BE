@@ -1,42 +1,70 @@
+// app.ts - WITH YOUR UPLOAD MIDDLEWARE
 import express, {} from "express";
+import { upload } from "./middleware/upload.middleware.js";
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
-import { successResponse } from "./utils/response.js";
-import { errorHandler } from "./middleware/error.handler.js";
-import categoryRouter from "./routes/category.route.js";
-import checkInRouter from "./routes/checkIn.route.js";
-import habitRouter from "./routes/habit.route.js";
-import profileRouter from "./routes/profile.route.js";
-import authRouter from "./routes/auth.route.js";
-import swaggerUI from "swagger-ui-express";
-import swaggerSpec from "./utils/swagger.js";
+import authRoutes from "./routes/auth.route.js";
+import categoryRoutes from "./routes/category.route.js";
+import checkInRoutes from "./routes/checkIn.route.js";
+import habitRoutes from "./routes/habit.route.js";
+import profileRoutes from "./routes/profile.route.js";
+import dashboardRoutes from "./routes/dashboard.route.js";
+import statRoutes from "./routes/stat.route.js";
 const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
-app.set("query panser", "extended");
+app.use(express.urlencoded({ extended: true }));
+app.set("query parser", "extended");
 app.use(express.static("public"));
+app.use("/uploads", express.static("public/uploads"));
+app.use((req, res, next) => {
+    const contentType = req.headers["content-type"] || "";
+    if (contentType.includes("multipart/form-data")) {
+        upload.none()(req, res, (err) => {
+            if (err) {
+                console.error("Multer error:", err);
+                return res.status(400).json({
+                    success: false,
+                    message: "Error parsing form data"
+                });
+            }
+            next();
+        });
+    }
+    else {
+        next();
+    }
+});
 app.use((req, _res, next) => {
     console.log(`${req.method}: ${req.path}`);
     req.startTime = Date.now();
     next();
 });
 app.get("/", (_req, res) => {
-    successResponse(res, "selamat datang di API Habit Forge", {
-        status: "server Hidup",
+    res.json({
+        status: "OK",
+        message: "Habit Tracker API",
+        timestamp: new Date().toISOString()
     });
 });
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
-app.use("/api/category", categoryRouter);
-app.use("/api/checkIn", checkInRouter);
-app.use("/api/habit", habitRouter);
-app.use("/api/profile", profileRouter);
-app.use("/api/auth", authRouter);
-app.get(/.*/, (req, _res) => {
-    throw new Error(`Route ${req.originalUrl} tidak ada di API e-commrece`);
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/category", categoryRoutes);
+app.use("/api/checkIn", checkInRoutes);
+app.use("/api/habit", habitRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/stat", statRoutes);
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Route ${req.originalUrl} not found`
+    });
 });
+import { errorHandler } from "./middleware/error.handler.js";
 app.use(errorHandler);
 export default app;
 //# sourceMappingURL=app.js.map

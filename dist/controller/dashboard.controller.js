@@ -1,7 +1,7 @@
 import { DashboardService } from "../service/dashboard.service.js";
 import { DashboardRepository } from "../repository/dashboard.repository.js";
-import { PrismaClient } from "../../dist/generated/index.js";
-const prisma = new PrismaClient();
+import prismaInstance from "../database.js";
+const prisma = prismaInstance;
 const dashboardRepo = new DashboardRepository(prisma);
 const dashboardService = new DashboardService(dashboardRepo);
 // GET /api/dashboard

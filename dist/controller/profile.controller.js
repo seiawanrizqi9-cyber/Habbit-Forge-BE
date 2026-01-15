@@ -1,4 +1,4 @@
-import { successResponse } from "../utils/response.js";
+import { errorResponse, successResponse } from "../utils/response.js";
 export class ProfileController {
     profileService;
     constructor(profileService) {
@@ -14,8 +14,20 @@ export class ProfileController {
         successResponse(res, "profile sudah diambil", profile);
     }
     async updateProfileHandler(req, res) {
-        const profile = await this.profileService.updateProfile(req.params.id, req.body);
-        successResponse(res, "buku berhasil di update", profile);
+        try {
+            const userId = req.params.id;
+            const updateData = { ...req.body };
+            // ✅ Handle uploaded file
+            if (req.file) {
+                // File path relatif dari public folder
+                updateData.avatar = `/uploads/${req.file.filename}`;
+            }
+            const profile = await this.profileService.updateProfile(userId, updateData);
+            successResponse(res, "profile berhasil di update", profile);
+        }
+        catch (error) {
+            errorResponse(res, error.message, 400);
+        }
     }
 }
 //# sourceMappingURL=profile.controller.js.map

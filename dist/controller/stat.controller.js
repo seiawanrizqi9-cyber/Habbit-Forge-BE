@@ -1,5 +1,5 @@
-import { PrismaClient } from "../../dist/generated/index.js";
-const prisma = new PrismaClient();
+import prismaInstance from "../database.js";
+const prisma = prismaInstance;
 export const getHabitStreak = async (req, res) => {
     const userId = req.user?.id;
     const habitId = req.params.id;

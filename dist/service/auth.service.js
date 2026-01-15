@@ -25,7 +25,9 @@ export const login = async (data) => {
         where: { email: data.email }
     });
     if (!user) {
-        throw new Error("Email atau password salah");
+        const error = new Error("Email atau password salah");
+        error.name = "AuthenticationError";
+        throw error;
     }
     const isValid = await bcrypt.compare(data.password, user.password);
     if (!isValid) {
