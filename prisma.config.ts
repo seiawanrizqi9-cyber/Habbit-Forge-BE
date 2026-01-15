@@ -9,4 +9,9 @@ export default defineConfig({
   datasource: {
     url: env("DATABASE_URL"),
   },
+  ...(process.env.DATABASE_URL?.includes("railway") && {
+    datasource: {
+      url: env("DATABASE_URL") + "?sslmode=no-verify&connect_timeout=30",
+    },
+  }),
 });
