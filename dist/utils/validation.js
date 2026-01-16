@@ -12,7 +12,7 @@ export const validate = (validations) => {
             return next();
         }
         const errorList = errors.array().map(err => ({
-            field: err.type === "field" ? err.path : "unknown",
+            field: err.type === 'field' ? err.path : 'unknown',
             message: err.msg
         }));
         return errorResponse(res, "Validasi gagal", 400, errorList);
