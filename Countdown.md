@@ -21,7 +21,7 @@ Di sini kita bagi jadi **3 peran inti**:
 - Tentuin folder: `screens`, `components`, `services`
 - Setup navigation (login → dashboard)
 
-👉 Ibaratnya: **bangun rangka rumah, belum isi furnitur**
+👉 Ibaratnya: **bangun rangka rumah, belum isi furnitur dan harus disi**
 
 ---
 
