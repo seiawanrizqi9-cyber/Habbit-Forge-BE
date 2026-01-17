@@ -1,6 +1,7 @@
 import express, { type Application, type Request, type Response, type NextFunction } from "express";
 import cors from 'cors';
 import morgan from 'morgan';
+import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './middleware/error.handler.js';
 import swaggerSpec from './utils/swagger.js';
@@ -13,7 +14,7 @@ import checkInRoutes from './routes/checkIn.route.js';
 import profileRoutes from './routes/profile.route.js';
 import dashboardRoutes from './routes/dashboard.route.js';
 import statRoutes from './routes/stat.route.js';
-const helmet = require('helmet');
+
 
 const app: Application = express();
 
@@ -24,7 +25,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
-
+// @ts-ignore
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
