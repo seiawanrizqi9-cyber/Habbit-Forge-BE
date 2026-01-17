@@ -1,7 +1,7 @@
 import express, { type Application, type Request, type Response, type NextFunction } from "express";
 import cors from 'cors';
 import morgan from 'morgan';
-import helmet from 'helmet';
+import * as helmet from 'helmet'; 
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './middleware/error.handler.js';
 import swaggerSpec from './utils/swagger.js';
@@ -24,7 +24,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
-app.use(helmet());
+app.use(helmet.default());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
