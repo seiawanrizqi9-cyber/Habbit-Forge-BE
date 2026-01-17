@@ -24,6 +24,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
+
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
