@@ -21,4 +21,3 @@ const getPrisma = () => {
 };
 const prismaInstance = getPrisma();
 export default prismaInstance;
-//# sourceMappingURL=database.js.map

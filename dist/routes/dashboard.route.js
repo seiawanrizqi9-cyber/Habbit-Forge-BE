@@ -42,4 +42,3 @@ router.get("/today", authenticate, getTodayHabits);
  */
 router.get("/stats", authenticate, getStats);
 export default router;
-//# sourceMappingURL=dashboard.route.js.map

@@ -11,4 +11,3 @@ export const updateProfileValidation = [
         .isLength({ max: 500 })
         .withMessage("Bio maksimal 500 karakter"),
 ];
-//# sourceMappingURL=profile.validation.js.map

@@ -21,4 +21,3 @@ export const updateCheckInValidation = [
         .isLength({ max: 500 })
         .withMessage("Catatan maksimal 500 karakter"),
 ];
-//# sourceMappingURL=checkIn.validation.js.map

@@ -50,4 +50,3 @@ export class CheckInController {
         successResponse(res, "CheckIn berhasil dihapus", deleted);
     });
 }
-//# sourceMappingURL=checkIn.controller.js.map

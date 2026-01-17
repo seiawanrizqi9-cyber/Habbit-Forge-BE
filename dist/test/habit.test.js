@@ -130,4 +130,3 @@ describe("PUT /api/habit/:id/toggle", () => {
         expect(res.body.success).toBe(true);
     });
 });
-//# sourceMappingURL=habit.test.js.map

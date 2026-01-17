@@ -131,4 +131,3 @@ describe("DELETE /api/checkin/:id", () => {
         expect(res.body.success).toBe(true);
     });
 });
-//# sourceMappingURL=checkIn.test.js.map

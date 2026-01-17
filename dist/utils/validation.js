@@ -18,4 +18,3 @@ export const validate = (validations) => {
         return errorResponse(res, "Validasi gagal", 400, errorList);
     };
 };
-//# sourceMappingURL=validation.js.map

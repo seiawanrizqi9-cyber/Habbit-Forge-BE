@@ -27,4 +27,3 @@ const option = {
 };
 const swaggerSpec = swaggerJSDoc(option);
 export default swaggerSpec;
-//# sourceMappingURL=swagger.js.map

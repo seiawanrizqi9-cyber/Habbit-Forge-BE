@@ -38,4 +38,3 @@ router.get("/habits/:id/streak", authenticate, getHabitStreak);
  */
 router.get("/monthly", authenticate, getMonthlyStats);
 export default router;
-//# sourceMappingURL=stat.route.js.map

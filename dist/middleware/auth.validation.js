@@ -31,4 +31,3 @@ export const loginValidation = [
         .notEmpty()
         .withMessage("Password diperlukan"),
 ];
-//# sourceMappingURL=auth.validation.js.map

@@ -14,4 +14,3 @@ export class ProfileService {
         return await this.profileRepo.updateByUserId(userId, data);
     }
 }
-//# sourceMappingURL=profile.service.js.map

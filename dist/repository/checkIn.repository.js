@@ -61,4 +61,3 @@ export class CheckInRepository {
         });
     }
 }
-//# sourceMappingURL=checkIn.repository.js.map

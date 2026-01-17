@@ -19,4 +19,3 @@ export const authenticate = (req, res, next) => {
         return errorResponse(res, "token tidak valid", 401);
     }
 };
-//# sourceMappingURL=auth.middleware.js.map

@@ -70,4 +70,3 @@ router.post('/register', validate(registerValidation), register);
  */
 router.post('/login', validate(loginValidation), login);
 export default router;
-//# sourceMappingURL=auth.route.js.map

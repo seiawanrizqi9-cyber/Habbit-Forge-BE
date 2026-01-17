@@ -118,4 +118,3 @@ router.put("/:id", authenticate, validate(updateCheckInValidation), controller.u
  */
 router.delete("/:id", authenticate, controller.deleteCheckInHandler);
 export default router;
-//# sourceMappingURL=checkIn.route.js.map

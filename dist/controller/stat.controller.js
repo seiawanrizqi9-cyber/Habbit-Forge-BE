@@ -49,4 +49,3 @@ export const getMonthlyStats = asyncHandler(async (req, res) => {
         completion
     });
 });
-//# sourceMappingURL=stat.controller.js.map

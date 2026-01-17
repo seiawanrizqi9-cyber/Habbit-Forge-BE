@@ -22,4 +22,3 @@ export const upload = multer({
     limits: { fileSize: 2 * 1024 * 1024 },
     fileFilter: fileFilter,
 });
-//# sourceMappingURL=upload.middleware.js.map

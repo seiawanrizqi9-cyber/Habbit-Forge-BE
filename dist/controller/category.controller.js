@@ -25,4 +25,3 @@ export class CategoryController {
         successResponse(res, "Kategori berhasil diambil", category);
     });
 }
-//# sourceMappingURL=category.controller.js.map

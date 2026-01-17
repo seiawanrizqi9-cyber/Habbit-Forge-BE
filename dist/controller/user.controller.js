@@ -13,4 +13,3 @@ export class UserController {
         successResponse(res, "User data retrieved", user);
     });
 }
-//# sourceMappingURL=user.controller.js.map

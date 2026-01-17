@@ -58,4 +58,3 @@ router.get("/", authenticate, controller.getProfileByIdHandler);
  */
 router.put("/", authenticate, upload.single("avatar"), validate(updateProfileValidation), controller.updateProfileHandler);
 export default router;
-//# sourceMappingURL=profile.route.js.map

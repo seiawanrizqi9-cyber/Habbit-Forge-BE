@@ -188,4 +188,3 @@ router.delete("/:id", authenticate, controller.deleteHabitHandler);
  */
 router.put("/:id/toggle", authenticate, controller.toggleHabitHandler);
 export default router;
-//# sourceMappingURL=habit.route.js.map

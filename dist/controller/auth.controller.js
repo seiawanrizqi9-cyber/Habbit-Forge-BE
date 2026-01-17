@@ -9,4 +9,3 @@ export const register = asyncHandler(async (req, res) => {
     const result = await authService.register(req.body);
     successResponse(res, "Registrasi berhasil", result, null, 201);
 });
-//# sourceMappingURL=auth.controller.js.map

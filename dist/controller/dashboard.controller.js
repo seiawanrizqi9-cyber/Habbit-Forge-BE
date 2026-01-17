@@ -48,4 +48,3 @@ export const getStats = async (req, res) => {
         return res.status(500).json({ error: "Failed to get stats" });
     }
 };
-//# sourceMappingURL=dashboard.controller.js.map

@@ -63,4 +63,3 @@ router.get("/", authenticate, controller.getAllCategoryHandler);
  */
 router.get("/:id", authenticate, controller.getCategoryByIdHandler);
 export default router;
-//# sourceMappingURL=category.route.js.map

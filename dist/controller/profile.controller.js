@@ -24,4 +24,3 @@ export class ProfileController {
         successResponse(res, "Profile berhasil diupdate", profile);
     });
 }
-//# sourceMappingURL=profile.controller.js.map

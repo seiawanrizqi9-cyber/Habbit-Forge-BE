@@ -41,4 +41,3 @@ describe("GET /api/dashboard/stats", () => {
         expect(res.body.success).toBe(true);
     });
 });
-//# sourceMappingURL=category.test.js.map

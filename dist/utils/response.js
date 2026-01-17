@@ -19,4 +19,3 @@ export const errorResponse = (res, message, statusCode = 400, errors = null) => 
         response.errors = errors;
     return res.status(statusCode).json(response);
 };
-//# sourceMappingURL=response.js.map

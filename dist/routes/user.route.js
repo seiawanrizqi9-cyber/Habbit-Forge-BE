@@ -21,4 +21,3 @@ const router = Router();
  */
 router.get("/me", authenticate, controller.getCurrentUserHandler);
 export default router;
-//# sourceMappingURL=user.route.js.map

@@ -6,4 +6,3 @@ export const errorHandler = (err, _req, res, _next) => {
         ? { stack: err.stack }
         : null);
 };
-//# sourceMappingURL=error.handler.js.map

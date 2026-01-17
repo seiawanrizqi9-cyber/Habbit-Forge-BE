@@ -36,4 +36,3 @@ describe("PUT /api/profile/:id", () => {
         expect(res.body.success).toBe(true);
     });
 });
-//# sourceMappingURL=profile.test.js.map

@@ -52,4 +52,3 @@ export class CheckInService {
         return await this.checkInRepo.softDelete(id);
     }
 }
-//# sourceMappingURL=checkIn.service.js.map
