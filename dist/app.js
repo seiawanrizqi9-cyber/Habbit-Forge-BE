@@ -14,6 +14,7 @@ import checkInRoutes from './routes/checkIn.route.js';
 import profileRoutes from './routes/profile.route.js';
 import dashboardRoutes from './routes/dashboard.route.js';
 import statRoutes from './routes/stat.route.js';
+import seedRoutes from './routes/seed.route.js';
 const app = express();
 app.use(cors({
     origin: "*",
@@ -56,6 +57,7 @@ app.use('/api/checkIn', checkInRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stat', statRoutes);
+app.use("/api/internal", seedRoutes);
 app.use((req, _res, next) => {
     const error = new Error(`Route ${req.originalUrl} tidak ditemukan di API Habit Tracker`);
     error.status = 404;
