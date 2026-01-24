@@ -6,17 +6,3 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Frequency {
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
-}
-
-enum CategoryName {
-  HEALTHY
-  FINANCE
-  WORK
-  LEARNING
-  SOCIAL
-}

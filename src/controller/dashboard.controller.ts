@@ -20,45 +20,31 @@ export const getDashboard = asyncHandler(
     const dashboardData = await dashboardService.getDashboard(userId);
 
     successResponse(res, "Dashboard data retrieved", dashboardData);
-  }
+  },
 );
 
-export const getTodayHabits = async (req: Request, res: Response) => {
-  try {
+export const getTodayHabits = asyncHandler(
+  async (req: Request, res: Response) => {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new Error("Unauthorized");
     }
 
     const todayHabits = await dashboardService.getTodayHabits(userId);
 
-    return res.status(200).json({
-      success: true,
-      data: todayHabits,
-    });
-  } catch (error) {
-    console.error("Today habits error:", error);
-    return res.status(500).json({ error: "Failed to get today habits" });
+    successResponse(res, "Today's habits retrieved", todayHabits);
+  },
+);
+
+export const getStats = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new Error("Unauthorized");
   }
-};
 
-export const getStats = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
+  const stats = await dashboardService.getStats(userId);
 
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const stats = await dashboardService.getStats(userId);
-
-    return res.status(200).json({
-      success: true,
-      data: stats,
-    });
-  } catch (error) {
-    console.error("Stats error:", error);
-    return res.status(500).json({ error: "Failed to get stats" });
-  }
-};
+  successResponse(res, "Statistics retrieved", stats);
+});

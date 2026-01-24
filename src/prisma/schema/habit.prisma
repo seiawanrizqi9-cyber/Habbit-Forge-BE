@@ -10,7 +10,6 @@ model Habit {
   userId        String
   categoryId    String?
   currentStreak Int       @default(0)
-  lastCheckIn   DateTime?
   longestStreak Int       @default(0)
   checkIn       CheckIn[]
   category      Category? @relation(fields: [categoryId], references: [id])
@@ -19,4 +18,11 @@ model Habit {
   @@index([userId])
   @@index([userId, isActive])
   @@map("habits")
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }

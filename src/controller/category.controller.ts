@@ -12,20 +12,15 @@ export class CategoryController {
       limit: Number(req.query.limit) || 10,
       search: req.query.search as any,
       sortBy: req.query.sortBy as string,
-      sortOrder: (req.query.sortOrder as "asc" | "desc") || "desc"
+      sortOrder: (req.query.sortOrder as "asc" | "desc") || "desc",
     });
 
-    successResponse(
-      res,
-      "Daftar kategori berhasil diambil",
-      result.category,
-      {
-        page: result.currentPage,
-        limit: Number(req.query.limit) || 10,
-        total: result.total,
-        totalPages: result.totalPages,
-      }
-    );
+    successResponse(res, "Daftar kategori berhasil diambil", result.category, {
+      page: result.currentPage,
+      limit: Number(req.query.limit) || 10,
+      total: result.total,
+      totalPages: result.totalPages,
+    });
   });
 
   getCategoryByIdHandler = asyncHandler(async (req: Request, res: Response) => {

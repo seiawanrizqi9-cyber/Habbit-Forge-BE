@@ -9,3 +9,11 @@ model Category {
 
   @@map("categories")
 }
+
+enum CategoryName {
+  HEALTHY
+  FINANCE
+  WORK
+  LEARNING
+  SOCIAL
+}

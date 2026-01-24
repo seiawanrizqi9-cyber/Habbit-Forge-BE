@@ -1,4 +1,3 @@
-// prisma/seed.ts
 import { Category, Frequency } from '@prisma/client'
 import prismaInstance from '../database.js'
 import { hash } from 'bcrypt'
@@ -16,54 +15,68 @@ async function main() {
   await prisma.user.deleteMany()
   await prisma.category.deleteMany()
 
-  // 1. Seed Categories
+  // 1. Seed Categories - SESUAI DENGAN ENUM
   console.log('📂 Seeding categories...')
+  
+  // Buat kategori sesuai enum, dengan type casting yang benar
+  const categoriesData = [
+    {
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      name: 'HEALTHY' as const,  // Type assertion
+      description: 'Kebiasaan untuk kesehatan fisik & mental',
+      color: '#10B981',
+      icon: '💊'
+    },
+    {
+      id: '550e8400-e29b-41d4-a716-446655440002',
+      name: 'FINANCE' as const,
+      description: 'Kebiasaan pengelolaan keuangan',
+      color: '#EF4444',
+      icon: '💰'
+    },
+    {
+      id: '550e8400-e29b-41d4-a716-446655440003',
+      name: 'WORK' as const,
+      description: 'Kebiasaan produktivitas & pekerjaan',
+      color: '#F59E0B',
+      icon: '💼'
+    },
+    {
+      id: '550e8400-e29b-41d4-a716-446655440004',
+      name: 'LEARNING' as const,
+      description: 'Kebiasaan belajar & pengembangan diri',
+      color: '#8B5CF6',
+      icon: '📚'
+    },
+    {
+      id: '550e8400-e29b-41d4-a716-446655440005',
+      name: 'SOCIAL' as const,
+      description: 'Kebiasaan hubungan sosial & keluarga',
+      color: '#3B82F6',
+      icon: '👥'
+    }
+  ]
+
   await prisma.category.createMany({
-    data: [
-      {
-        id: '550e8400-e29b-41d4-a716-446655440001',
-        name: 'HEALTHY',
-        description: 'Kebiasaan untuk kesehatan fisik & mental',
-        color: '#10B981',
-        icon: '💊'
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440002',
-        name: 'HEALTHY',
-        description: 'Aktivitas fisik & olahraga',
-        color: '#3B82F6',
-        icon: '🏃'
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440003',
-        name: 'LEARNING',
-        description: 'Kebiasaan belajar & pengembangan diri',
-        color: '#8B5CF6',
-        icon: '📚'
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440004',
-        name: 'LEARNING',
-        description: 'Kebiasaan untuk meningkatkan produktivitas',
-        color: '#F59E0B',
-        icon: '⚡'
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440005',
-        name: 'FINANCE',
-        description: 'Kebiasaan pengelolaan keuangan',
-        color: '#EF4444',
-        icon: '💰'
-      }
-    ]
+    data: categoriesData
   })
 
   // Get category IDs for later use
   const allCategories = await prisma.category.findMany()
-  const healthCategory = allCategories.find((c : Category) => c.name === 'HEALTHY')
-  const exerciseCategory = allCategories.find((c : Category) => c.name === 'HEALTHY')
-  const learnCategory = allCategories.find((c : Category) => c.name === 'LEARNING')
-  const financeCategory = allCategories.find((c : Category) => c.name === 'FINANCE')
+  
+  // Helper function untuk find category dengan aman
+  const findCategory = (name: string): Category => {
+    const category = allCategories.find(c => c.name === name)
+    if (!category) {
+      throw new Error(`Category ${name} not found after seeding`)
+    }
+    return category
+  }
+
+  const healthCategory = findCategory('HEALTHY')
+  const financeCategory = findCategory('FINANCE')
+  const workCategory = findCategory('WORK')  // Tetap define meski tidak dipakai
+  const learningCategory = findCategory('LEARNING')
 
   // 2. Seed Users (with Profiles)
   console.log('👤 Seeding users...')
@@ -106,7 +119,7 @@ async function main() {
     }
   })
 
-  // 3. Seed Habits
+  // 3. Seed Habits dengan kategori yang benar
   console.log('🎯 Seeding habits...')
 
   // John's habits
@@ -118,7 +131,7 @@ async function main() {
       startDate: new Date('2026-01-01'),
       frequency: Frequency.DAILY,
       userId: john.id,
-      categoryId: healthCategory?.id || null
+      categoryId: healthCategory.id
     }
   })
 
@@ -130,7 +143,7 @@ async function main() {
       startDate: new Date('2026-01-02'),
       frequency: Frequency.DAILY,
       userId: john.id,
-      categoryId: exerciseCategory?.id || null
+      categoryId: healthCategory.id
     }
   })
 
@@ -142,20 +155,20 @@ async function main() {
       startDate: new Date('2026-01-03'),
       frequency: Frequency.DAILY,
       userId: john.id,
-      categoryId: learnCategory?.id || null
+      categoryId: learningCategory.id
     }
   })
 
   const johnHabits = [johnHabit1, johnHabit2, johnHabit3]
 
-  // Jane's habits
+  // Jane's habits - tambahkan habit dengan kategori WORK untuk contoh
   const janeHabit1 = await prisma.habit.create({
     data: {
       id: 'h8i9j0k1-l2m3-4567-hijk-890123456789',
       title: 'Meditasi',
       description: 'Meditasi 10 menit setiap pagi',
       userId: jane.id,
-      categoryId: healthCategory?.id || null,
+      categoryId: healthCategory.id,
       startDate: new Date('2026-01-04'),
       frequency: Frequency.DAILY,
     }
@@ -167,7 +180,7 @@ async function main() {
       title: 'Yoga',
       description: 'Yoga 20 menit sebelum tidur',
       userId: jane.id,
-      categoryId: exerciseCategory?.id || null,
+      categoryId: healthCategory.id,
       startDate: new Date('2026-01-04'),
       frequency: Frequency.DAILY,
       
@@ -180,13 +193,25 @@ async function main() {
       title: 'Catat Pengeluaran',
       description: 'Mencatat semua pengeluaran harian',
       userId: jane.id,
-      categoryId: financeCategory?.id || null,
+      categoryId: financeCategory.id,
       startDate: new Date('2026-01-05'),
       frequency: Frequency.WEEKLY,
     }
   })
 
-  const janeHabits = [janeHabit1, janeHabit2, janeHabit3]
+  const janeHabit4 = await prisma.habit.create({
+    data: {
+      id: 'k1l2m3n4-o5p6-7890-klmn-123456789012',
+      title: 'Review Weekly Goals',
+      description: 'Review goals kerja mingguan',
+      userId: jane.id,
+      categoryId: workCategory.id,  // Sekarang dipakai
+      startDate: new Date('2026-01-06'),
+      frequency: Frequency.WEEKLY,
+    }
+  })
+
+  const janeHabits = [janeHabit1, janeHabit2, janeHabit3, janeHabit4]
 
   // 4. Seed Check-ins (Last 7 days)
   console.log('✅ Seeding check-ins...')
@@ -280,6 +305,20 @@ async function main() {
         })
       )
     }
+
+    // Habit 4: Weekly Review (1x per minggu)
+    if (i === 0) {
+      checkInPromises.push(
+        prisma.checkIn.create({
+          data: {
+            habitId: janeHabit4.id,
+            userId: jane.id,
+            date: date,
+            note: 'Review goals untuk minggu depan'
+          }
+        })
+      )
+    }
   }
 
   await Promise.all(checkInPromises)
@@ -287,7 +326,7 @@ async function main() {
   // 5. Print Summary
   console.log('\n✨ Seed completed!')
   console.log('====================')
-  console.log(`📂 Categories: ${allCategories.length}`)
+  console.log(`📂 Categories: ${categoriesData.length} (HEALTHY, FINANCE, WORK, LEARNING, SOCIAL)`)
   console.log(`👤 Users: 2 (john@example.com / jane@example.com)`)
   console.log(`🎯 Habits: ${johnHabits.length + janeHabits.length}`)
   console.log(`✅ Check-ins: ${checkInPromises.length}`)

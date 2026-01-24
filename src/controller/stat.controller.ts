@@ -2,61 +2,103 @@ import type { Request, Response } from "express";
 import prisma from "../database.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/response.js";
+import { getStartOfDate } from "../utils/timeUtils.js";
 
-export const getHabitStreak = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const habitId = req.params.id;
+export const getHabitStreak = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    const habitId = req.params.id;
 
-  if (!userId || !habitId) {
-    throw new Error("Bad request");
-  }
+    if (!userId || !habitId) {
+      throw new Error("Bad request");
+    }
 
-  // ⭐ VALIDASI HABIT MILIK USER
-  const habit = await prisma.habit.findFirst({
-    where: { id: habitId, userId },
-  });
-  
-  if (!habit) throw new Error("Habit not found");
+    // Validasi habit milik user
+    const habit = await prisma.habit.findFirst({
+      where: { id: habitId, userId },
+    });
 
-  let streak = 0;
-  let date = new Date();
-  date.setHours(0, 0, 0, 0);
+    if (!habit) throw new Error("Habit not found");
 
-  while (true) {
-    const checkIn = await prisma.checkIn.findFirst({
+    // Ambil 60 hari terakhir sekaligus (lebih efisien)
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    sixtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const checkIns = await prisma.checkIn.findMany({
       where: {
-        habitId: habitId,
-        date: { gte: date, lt: new Date(date.getTime() + 86400000) },
+        habitId,
+        date: { gte: sixtyDaysAgo },
+      },
+      select: { date: true },
+      orderBy: { date: "desc" },
+    });
+
+    // Kelompokkan per hari
+    const checkInDays = new Set(
+      checkIns.map((checkIn) => {
+        const date = new Date(checkIn.date);
+        date.setHours(0, 0, 0, 0);
+        return date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+      }),
+    );
+
+    // Hitung streak
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 60; i++) {
+      const dateStr = currentDate.toISOString().split("T")[0];
+
+      if (checkInDays.has(dateStr)) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    successResponse(res, "Streak berhasil diambil", {
+      habitId,
+      streak,
+      habitTitle: habit.title,
+    });
+  },
+);
+
+export const getMonthlyStats = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfMonth = getStartOfDate(firstDay);
+
+    const habits = await prisma.habit.count({
+      where: { userId, isActive: true },
+    });
+
+    const checkIns = await prisma.checkIn.count({
+      where: {
+        userId,
+        date: { gte: startOfMonth },
       },
     });
-    if (!checkIn) break;
-    streak++;
-    date.setDate(date.getDate() - 1);
-  }
 
-  successResponse(res, "Streak berhasil diambil", { habitId, streak });
-});
+    const days = today.getDate();
+    const completion =
+      habits > 0 ? Math.round((checkIns / (habits * days)) * 100) : 0;
 
-export const getMonthlyStats = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  if (!userId) throw new Error("Unauthorized");
-
-  const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-
-  const habits = await prisma.habit.count({
-    where: { userId, isActive: true },
-  });
-  
-  const checkIns = await prisma.checkIn.count({
-    where: { userId, date: { gte: firstDay } },
-  });
-
-  const days = new Date().getDate();
-  const completion = habits > 0 ? Math.round((checkIns / (habits * days)) * 100) : 0;
-
-  successResponse(res, "Statistik bulanan berhasil diambil", { 
-    habits, 
-    checkIns, 
-    completion 
-  });
-});
+    successResponse(res, "Statistik bulanan berhasil diambil", {
+      habits,
+      checkIns,
+      completion,
+      month: today.toLocaleDateString("id-ID", {
+        month: "long",
+        year: "numeric",
+      }),
+    });
+  },
+);

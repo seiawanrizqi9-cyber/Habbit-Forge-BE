@@ -25,7 +25,7 @@ export class HabitController {
         sortBy,
         sortOrder,
       },
-      userId
+      userId,
     );
 
     const pagination = {
@@ -39,7 +39,7 @@ export class HabitController {
       res,
       "Daftar habit berhasil diambil",
       result.habit,
-      pagination
+      pagination,
     );
   });
 
@@ -58,8 +58,9 @@ export class HabitController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const { title, description, isActive, categoryId, startDate, frequency, lastCheckIn } = req.body;
-    
+    const { title, description, isActive, categoryId, startDate, frequency } =
+      req.body;
+
     if (!title) throw new Error("Title diperlukan");
     if (!startDate) throw new Error("startDate diperlukan");
     if (!frequency) throw new Error("frequency diperlukan");
@@ -72,7 +73,7 @@ export class HabitController {
     if (!Object.values(Frequency).includes(frequency)) {
       throw new Error("Frequency tidak valid");
     }
-    
+
     const habit = await this.habitService.createHabit({
       title,
       description,
@@ -80,8 +81,7 @@ export class HabitController {
       userId,
       categoryId,
       startDate,
-      lastCheckIn,
-      frequency
+      frequency,
     });
 
     successResponse(res, "Habit berhasil dibuat", habit, null, 201);
@@ -94,7 +94,11 @@ export class HabitController {
     const habitId = req.params.id;
     if (!habitId) throw new Error("Habit ID diperlukan");
 
-    const habit = await this.habitService.updateHabit(habitId, req.body, userId);
+    const habit = await this.habitService.updateHabit(
+      habitId,
+      req.body,
+      userId,
+    );
     successResponse(res, "Habit berhasil diupdate", habit);
   });
 
@@ -117,11 +121,11 @@ export class HabitController {
     if (!habitId) throw new Error("Habit ID diperlukan");
 
     const toggledHabit = await this.habitService.toggleHabit(habitId, userId);
-    
-    const message = toggledHabit.isActive 
-      ? "Habit berhasil diaktifkan" 
+
+    const message = toggledHabit.isActive
+      ? "Habit berhasil diaktifkan"
       : "Habit berhasil dinonaktifkan";
-    
+
     successResponse(res, message, toggledHabit);
   });
 }

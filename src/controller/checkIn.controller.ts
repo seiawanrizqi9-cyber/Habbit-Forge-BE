@@ -22,13 +22,13 @@ export class CheckInController {
     if (!userId) throw new Error("Unauthorized");
 
     const { habitId, note } = req.body;
-    
+
     if (!habitId) throw new Error("Habit ID diperlukan");
 
     const checkIn = await this.checkInService.createCheckIn({
       habitId,
       userId,
-      note
+      note,
     });
 
     successResponse(res, "CheckIn berhasil dibuat", checkIn, null, 201);
@@ -42,11 +42,11 @@ export class CheckInController {
     if (!checkInId) throw new Error("CheckIn ID diperlukan");
 
     const checkIn = await this.checkInService.updateCheckIn(
-      checkInId, 
-      req.body, 
-      userId
+      checkInId,
+      req.body,
+      userId,
     );
-    
+
     successResponse(res, "CheckIn berhasil diupdate", checkIn);
   });
 
@@ -58,7 +58,7 @@ export class CheckInController {
     if (!checkInId) throw new Error("CheckIn ID diperlukan");
 
     const deleted = await this.checkInService.deleteCheckIn(checkInId, userId);
-    
+
     successResponse(res, "CheckIn berhasil dihapus", deleted);
   });
 }

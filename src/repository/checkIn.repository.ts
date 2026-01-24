@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient, CheckIn } from "@prisma/client";
+import { getStartOfDate, getEndOfDate } from "../utils/timeUtils.js";
 
 export interface ICheckInRepository {
   list(
@@ -48,12 +49,9 @@ export class CheckInRepository implements ICheckInRepository {
   }
 
   async findTodayCheckIn(habitId: string, date: Date): Promise<CheckIn | null> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
+    const startOfDay = getStartOfDate(date);
+    const endOfDay = getEndOfDate(date);
+    
     return await this.prisma.checkIn.findFirst({
       where: {
         habitId,

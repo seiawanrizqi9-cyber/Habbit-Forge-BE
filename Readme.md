@@ -1,121 +1,77 @@
-# 🎯 **ENDPOINT LIST - Habit Tracker API**
+4. TIMEZONE ISSUE DI CHECK-IN
 
-Berdasarkan schema kita, ini **prioritas endpoint** yang perlu dibuat:
+Menggunakan new Date() tanpa UTC → bisa beda hari antara server dan client
 
-## 📋 **ENDPOINT PRIORITAS (MVP)**
+Potensi bug: check-in terhitung di hari yang salah
 
-### **AUTHENTICATION** 🔐
-```
-POST    /api/auth/register     # Buat user baru + profile
-POST    /api/auth/login        # Login user
-POST    /api/auth/logout       # Logout (clear token)
-GET     /api/auth/me           # Get current user data
-```
+5. PERFORMANCE ISSUE - STREAK CALCULATION
 
-### **PROFILE** 👤
-```
-GET     /api/profile           # Get user profile
-PUT     /api/profile           # Update profile
-```
+N+1 query problem: setiap hari buat query baru ke database
 
-### **CATEGORIES** 🗂️
-```
-GET     /api/categories        # Get semua kategori
-GET     /api/categories/:id    # Get kategori detail
-```
+Sangat tidak efisien untuk streak panjang
 
-### **HABITS** 🎯 (CORE)
-```
-GET     /api/habits            # Get semua habits user
-GET     /api/habits/:id        # Get habit detail + stats
-POST    /api/habits            # Buat habit baru
-PUT     /api/habits/:id        # Update habit
-DELETE  /api/habits/:id        # Delete habit (soft delete)
-PUT     /api/habits/:id/toggle # Toggle aktif/nonaktif
-```
+⚠️ MASALAH MENENGAH (MEDIUM PRIORITY)
+6. VALIDASI HABIT CREATE KURANG
 
-### **CHECK-INS** ✅ (CORE)
-```
-GET     /api/habits/:id/checkins  # Get check-in history habit
-POST    /api/habits/:id/checkin   # Check-in hari ini
-PUT     /api/checkins/:id         # Update check-in (note)
-DELETE  /api/checkins/:id         # Delete check-in
-```
+Bisa set lastCheckIn manual (seharusnya otomatis)
 
-### **DASHBOARD** 📊
-```
-GET     /api/dashboard          # Data dashboard
-GET     /api/dashboard/today    # Habits untuk hari ini
-GET     /api/dashboard/stats    # Statistik user
-```
+Tidak validasi: startDate tidak boleh lebih tua dari hari ini
 
-### **STREAK & STATS** 📈
-```
-GET     /api/habits/:id/streak  # Get streak data habit
-GET     /api/stats/monthly      # Statistik bulanan
-```
+Tidak ada batasan untuk tanggal di masa depan
 
----
+7. SOFT DELETE TIDAK KONSISTEN
 
-## 🚀 **URUTAN PENGEMBANGAN:**
+CheckIn repository: softDelete update dengan data kosong
 
-### **PHASE 1 - BASIC AUTH & PROFILE** (Hari 1)
-```
-1. POST /api/auth/register
-2. POST /api/auth/login  
-3. GET  /api/auth/me
-4. GET  /api/profile
-5. PUT  /api/profile
-```
+Tidak ada field deletedAt di schema untuk soft delete
 
-### **PHASE 2 - HABIT MANAGEMENT** (Hari 2)
-```
-6. GET    /api/categories
-7. GET    /api/habits
-8. POST   /api/habits
-9. PUT    /api/habits/:id
-10. DELETE /api/habits/:id
-```
+Query lain tidak mengecualikan data yang di-soft-delete
 
-### **PHASE 3 - CHECK-IN SYSTEM** (Hari 3)
-```
-11. POST   /api/habits/:id/checkin
-12. GET    /api/habits/:id/checkins
-13. DELETE /api/checkins/:id
-```
+8. PAGINATION TANPA BATASAN
 
-### **PHASE 4 - DASHBOARD & STATS** (Hari 4)
-```
-14. GET /api/dashboard
-15. GET /api/dashboard/today
-16. GET /api/habits/:id/streak
-```
+Tidak ada MAX_LIMIT untuk pagination
 
----
+Bisa request limit: 1000000 → berat untuk server
 
-## 📁 **FOLDER STRUCTURE:**
-```
-src/
-├── controllers/
-│   ├── auth.controller.ts
-│   ├── profile.controller.ts
-│   ├── habit.controller.ts
-│   ├── checkin.controller.ts
-│   └── dashboard.controller.ts
-├── middleware/
-│   ├── auth.middleware.ts
-│   └── validate.middleware.ts
-├── routes/
-│   ├── auth.routes.ts
-│   ├── profile.routes.ts
-│   ├── habit.routes.ts
-│   └── dashboard.routes.ts
-├── services/
-│   ├── auth.service.ts
-│   ├── habit.service.ts
-│   └── streak.service.ts
-├── utils/
-│   ├── jwt.ts
-│   └── validation.ts
-└── app.ts
-```
+9. ABSENSI VALIDASI INPUT
+
+Beberapa endpoint tidak punya validation middleware
+
+User input tidak selalu divalidasi dengan benar
+
+10. TIPE RESPONSE TIDAK KONSISTEN
+
+Beberapa endpoint return data langsung, beberapa dengan wrapper
+
+Error message format tidak seragam
+
+🔧 MASALAH MINOR (LOW PRIORITY)
+11. TIDAK ADA TRANSACTION
+
+Operasi multi-step (create check-in + update streak) tidak atomic
+
+Potensi data inconsistency jika salah satu step gagal
+
+12. TIDAK ADA CACHING
+
+Data dashboard dihitung ulang setiap request
+
+Streak calculation selalu hit database
+
+13. LOGGING TERBATAS
+
+Hanya error logging dasar
+
+Tidak ada request logging, audit trail
+
+14. TIDAK ADA RATE LIMITING
+
+Bisa spam check-in endpoint
+
+Tidak ada proteksi DDoS basic
+
+15. ABSENSI HEALTH CHECK
+
+Tidak ada endpoint untuk monitor server health
+
+Sulit tahu kapan service down

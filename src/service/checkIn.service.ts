@@ -1,6 +1,7 @@
 import type { CheckIn } from "@prisma/client";
 import type { ICheckInRepository } from "../repository/checkIn.repository.js";
 import prisma from "../database.js";
+import { getTodayRange } from "../utils/timeUtils.js";
 
 export interface ICheckInService {
   getCheckInById(id: string, userId: string): Promise<CheckIn>;
@@ -36,8 +37,7 @@ export class CheckInService implements ICheckInService {
     habitId: string;
     userId: string;
   }): Promise<CheckIn> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const { start, end } = getTodayRange();
 
     // Validasi: Habit harus milik user DAN aktif
     const habit = await prisma.habit.findFirst({
@@ -52,17 +52,25 @@ export class CheckInService implements ICheckInService {
       throw new Error("Habit tidak ditemukan atau tidak aktif");
     }
 
-    const existingCheckIn = await this.checkInRepo.findTodayCheckIn(
-      data.habitId,
-      today
-    );
+    // Cek apakah sudah check-in hari ini
+    const existingCheckIn = await prisma.checkIn.findFirst({
+      where: {
+        habitId: data.habitId,
+        userId: data.userId,
+        date: {
+          gte: start,
+          lte: end
+        }
+      }
+    });
     
     if (existingCheckIn) {
       throw new Error("Sudah check-in hari ini");
     }
 
+    // Buat check-in
     const input: any = {
-      date: today,
+      date: new Date(), // Waktu sekarang (WIB)
       note: data.note,
       habit: { connect: { id: data.habitId } },
       user: { connect: { id: data.userId } },
