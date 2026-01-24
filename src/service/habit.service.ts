@@ -95,7 +95,6 @@ export class HabitService implements IHabitService {
     categoryId?: string;
     startDate: string;
     frequency: Frequency
-    lastCheckIn: string
 
   }): Promise<Habit> {
     // Validasi input
