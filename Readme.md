@@ -1,9 +1,3 @@
-4. TIMEZONE ISSUE DI CHECK-IN
-
-Menggunakan new Date() tanpa UTC → bisa beda hari antara server dan client
-
-Potensi bug: check-in terhitung di hari yang salah
-
 5. PERFORMANCE ISSUE - STREAK CALCULATION
 
 N+1 query problem: setiap hari buat query baru ke database
