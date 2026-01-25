@@ -1,71 +1,74 @@
 export class HabitRepository {
-    prisma;
-    constructor(prisma) {
-        this.prisma = prisma;
+    prismaInstance;
+    constructor(prismaInstance) {
+        this.prismaInstance = prismaInstance;
+    }
+    get prisma() {
+        return this.prismaInstance;
     }
     async list(skip, take, where, orderBy) {
-        return await this.prisma.habit.findMany({
+        return await this.prismaInstance.habit.findMany({
             skip,
             take,
             where,
             orderBy,
             include: {
                 category: true,
-                user: true
-            }
+                user: true,
+            },
         });
     }
     async countAll(where) {
-        return await this.prisma.habit.count({ where });
+        return await this.prismaInstance.habit.count({ where });
     }
     async findById(id) {
-        return await this.prisma.habit.findUnique({
+        return await this.prismaInstance.habit.findUnique({
             where: {
                 id: id,
             },
             include: {
                 category: true,
                 user: true,
-                checkIn: true
-            }
+                checkIn: true,
+            },
         });
     }
     async create(data) {
-        return await this.prisma.habit.create({ data });
+        return await this.prismaInstance.habit.create({ data });
     }
     async update(id, data) {
-        return await this.prisma.habit.update({
-            where: {
-                id
-            },
-            data
-        });
-    }
-    async softDelete(id) {
-        return await this.prisma.habit.update({
-            where: { id },
-            data: {
-                isActive: false
-            }
-        });
-    }
-    async toggleActive(id) {
-        const habit = await this.prisma.habit.findUnique({
+        return await this.prismaInstance.habit.update({
             where: {
                 id,
             },
-            select: { isActive: true }
+            data,
+        });
+    }
+    async softDelete(id) {
+        return await this.prismaInstance.habit.update({
+            where: { id },
+            data: {
+                isActive: false,
+            },
+        });
+    }
+    async toggleActive(id) {
+        const habit = await this.prismaInstance.habit.findUnique({
+            where: {
+                id,
+            },
+            select: { isActive: true },
         });
         if (!habit) {
-            throw new Error('Habit tidak ditemukan');
+            throw new Error("Habit tidak ditemukan");
         }
-        return await this.prisma.habit.update({
+        return await this.prismaInstance.habit.update({
             where: {
-                id
+                id,
             },
             data: {
-                isActive: !habit.isActive
-            }
+                isActive: !habit.isActive,
+            },
         });
     }
 }

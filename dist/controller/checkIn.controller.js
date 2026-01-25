@@ -25,7 +25,7 @@ export class CheckInController {
         const checkIn = await this.checkInService.createCheckIn({
             habitId,
             userId,
-            note
+            note,
         });
         successResponse(res, "CheckIn berhasil dibuat", checkIn, null, 201);
     });

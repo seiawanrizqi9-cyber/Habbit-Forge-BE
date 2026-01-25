@@ -1,3 +1,4 @@
+import { getStartOfDate } from "../utils/timeUtils.js";
 export class CheckInRepository {
     prisma;
     constructor(prisma) {
@@ -27,9 +28,8 @@ export class CheckInRepository {
         });
     }
     async findTodayCheckIn(habitId, date) {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
+        const startOfDay = getStartOfDate(date);
+        const endOfDay = new Date(startOfDay);
         endOfDay.setHours(23, 59, 59, 999);
         return await this.prisma.checkIn.findFirst({
             where: {

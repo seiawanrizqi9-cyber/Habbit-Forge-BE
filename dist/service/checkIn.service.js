@@ -1,4 +1,5 @@
 import prisma from "../database.js";
+import { getTodayRange } from "../utils/timeUtils.js";
 export class CheckInService {
     checkInRepo;
     constructor(checkInRepo) {
@@ -16,8 +17,7 @@ export class CheckInService {
         return checkIn;
     }
     async createCheckIn(data) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const { start, end } = getTodayRange();
         // Validasi: Habit harus milik user DAN aktif
         const habit = await prisma.habit.findFirst({
             where: {
@@ -29,12 +29,23 @@ export class CheckInService {
         if (!habit) {
             throw new Error("Habit tidak ditemukan atau tidak aktif");
         }
-        const existingCheckIn = await this.checkInRepo.findTodayCheckIn(data.habitId, today);
+        // Cek apakah sudah check-in hari ini
+        const existingCheckIn = await prisma.checkIn.findFirst({
+            where: {
+                habitId: data.habitId,
+                userId: data.userId,
+                date: {
+                    gte: start,
+                    lte: end
+                }
+            }
+        });
         if (existingCheckIn) {
             throw new Error("Sudah check-in hari ini");
         }
+        // Buat check-in
         const input = {
-            date: today,
+            date: new Date(), // Waktu sekarang (WIB)
             note: data.note,
             habit: { connect: { id: data.habitId } },
             user: { connect: { id: data.userId } },

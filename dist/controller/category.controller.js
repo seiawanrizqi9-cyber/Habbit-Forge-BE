@@ -11,7 +11,7 @@ export class CategoryController {
             limit: Number(req.query.limit) || 10,
             search: req.query.search,
             sortBy: req.query.sortBy,
-            sortOrder: req.query.sortOrder || "desc"
+            sortOrder: req.query.sortOrder || "desc",
         });
         successResponse(res, "Daftar kategori berhasil diambil", result.category, {
             page: result.currentPage,

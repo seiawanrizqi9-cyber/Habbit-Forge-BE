@@ -1,3 +1,4 @@
+import { getStartOfDate, getTodayRange } from "../utils/timeUtils.js";
 export class DashboardRepository {
     prisma;
     constructor(prisma) {
@@ -7,30 +8,28 @@ export class DashboardRepository {
     async getDashboard(userId) {
         // 1. Hitung total habits user
         const totalHabits = await this.prisma.habit.count({
-            where: { userId }
+            where: { userId },
         });
         // 2. Hitung habits aktif
         const activeHabits = await this.prisma.habit.count({
-            where: { userId, isActive: true }
+            where: { userId, isActive: true },
         });
         // 3. Hitung total check-ins user
         const totalCheckIns = await this.prisma.checkIn.count({
-            where: { userId }
+            where: { userId },
         });
-        // 4. Hitung streak (hari berturut-turut check-in)
-        const streak = await this.calculateStreak(userId);
+        // 4. Hitung streak (OPTIMIZED)
+        const streak = await this.calculateStreakOptimized(userId);
         return {
             totalHabits,
             activeHabits,
             totalCheckIns,
-            streak
+            streak,
         };
     }
     // GET Habits untuk hari ini
     async getTodayHabits(userId) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set ke awal hari
-        // 1. Ambil semua habits aktif user
+        const { start, end } = getTodayRange();
         const habits = await this.prisma.habit.findMany({
             where: { userId, isActive: true },
             include: {
@@ -38,21 +37,20 @@ export class DashboardRepository {
                 checkIn: {
                     where: {
                         date: {
-                            gte: today, // Dari awal hari ini
-                            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) // Sampai akhir hari
-                        }
-                    }
-                }
-            }
+                            gte: start,
+                            lte: end,
+                        },
+                    },
+                },
+            },
         });
-        // 2. Format response
-        return habits.map(habit => ({
+        return habits.map((habit) => ({
             id: habit.id,
             title: habit.title,
             description: habit.description,
-            category: habit.category?.name || 'No category',
-            isCompleted: habit.checkIn.length > 0, // Sudah check-in hari ini
-            checkInTime: habit.checkIn[0]?.createdAt || null
+            category: habit.category?.name || "No category",
+            isCompleted: habit.checkIn.length > 0,
+            checkInTime: habit.checkIn[0]?.date || null,
         }));
     }
     // GET Stats detail
@@ -60,76 +58,173 @@ export class DashboardRepository {
         // 1. Habits per kategori
         const habits = await this.prisma.habit.findMany({
             where: { userId },
-            include: { category: true }
+            include: { category: true },
         });
         const habitsByCategory = {};
-        habits.forEach(habit => {
-            const categoryName = habit.category?.name || 'Uncategorized';
-            habitsByCategory[categoryName] = (habitsByCategory[categoryName] || 0) + 1;
+        habits.forEach((habit) => {
+            const categoryName = habit.category?.name || "Uncategorized";
+            habitsByCategory[categoryName] =
+                (habitsByCategory[categoryName] || 0) + 1;
         });
-        // 2. Progress 7 hari terakhir
-        const last7Days = [];
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            date.setHours(0, 0, 0, 0);
-            const checkIns = await this.prisma.checkIn.count({
-                where: {
-                    userId,
-                    date: {
-                        gte: date,
-                        lt: new Date(date.getTime() + 24 * 60 * 60 * 1000)
-                    }
-                }
-            });
-            last7Days.push({
-                date: date.toISOString().split('T')[0], // Format: YYYY-MM-DD
-                checkIns
-            });
-        }
+        // 2. Progress 7 hari terakhir (OPTIMIZED)
+        const last7Days = await this.getLast7DaysStats(userId);
         // 3. Completion rate bulan ini
-        const today = new Date();
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const activeHabits = await this.prisma.habit.count({
-            where: { userId, isActive: true }
-        });
-        const daysInMonth = today.getDate(); // Hari ke berapa sekarang
-        const possibleCheckIns = activeHabits * daysInMonth;
-        const actualCheckIns = await this.prisma.checkIn.count({
-            where: {
-                userId,
-                date: { gte: firstDayOfMonth }
-            }
-        });
-        const completionRate = possibleCheckIns > 0
-            ? Math.round((actualCheckIns / possibleCheckIns) * 100)
-            : 0;
+        const completionRate = await this.getMonthlyCompletionRate(userId);
         return {
             habitsByCategory,
             last7Days,
-            monthlyCompletion: completionRate
+            monthlyCompletion: completionRate,
         };
     }
-    // Helper: Hitung streak
-    async calculateStreak(userId) {
+    // ========== OPTIMIZED METHODS ==========
+    /**
+     * Hitung streak dengan 1 query (OPTIMIZED)
+     */
+    async calculateStreakOptimized(userId) {
+        // Ambil 60 hari terakhir sekaligus
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        sixtyDaysAgo.setHours(0, 0, 0, 0);
+        // 1 QUERY untuk semua check-in
+        const checkIns = await this.prisma.checkIn.findMany({
+            where: {
+                userId,
+                date: { gte: sixtyDaysAgo },
+            },
+            select: { date: true },
+            orderBy: { date: "desc" },
+        });
+        // Convert ke Set of dates (YYYY-MM-DD)
+        const checkInDates = this.extractUniqueDates(checkIns);
+        // Hitung streak
+        return this.calculateStreakFromDates(checkInDates);
+    }
+    /**
+     * Progress 7 hari terakhir (OPTIMIZED)
+     */
+    async getLast7DaysStats(userId) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // 7 hari termasuk hari ini
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+        // 1 QUERY untuk 7 hari
+        const checkIns = await this.prisma.checkIn.findMany({
+            where: {
+                userId,
+                date: { gte: sevenDaysAgo },
+            },
+            select: { date: true },
+        });
+        // Kelompokkan per hari
+        const checkInsByDay = this.groupCheckInsByDay(checkIns);
+        // Format untuk 7 hari terakhir
+        const last7Days = [];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateKey = this.getDateKey(date);
+            if (!dateKey)
+                continue; // Guard clause
+            const checkInsCount = checkInsByDay.get(dateKey) || 0;
+            last7Days.push({
+                date: dateKey,
+                dateDisplay: date.toLocaleDateString("id-ID", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                }),
+                checkIns: checkInsCount,
+            });
+        }
+        return last7Days;
+    }
+    /**
+     * Completion rate bulan ini (OPTIMIZED)
+     */
+    async getMonthlyCompletionRate(userId) {
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const startOfMonth = getStartOfDate(firstDayOfMonth);
+        // 1. Hitung habits aktif (1 query)
+        const activeHabits = await this.prisma.habit.count({
+            where: { userId, isActive: true },
+        });
+        if (activeHabits === 0)
+            return 0;
+        // 2. Hitung check-ins bulan ini (1 query)
+        const actualCheckIns = await this.prisma.checkIn.count({
+            where: {
+                userId,
+                date: { gte: startOfMonth },
+            },
+        });
+        const daysInMonth = today.getDate();
+        const possibleCheckIns = activeHabits * daysInMonth;
+        return Math.round((actualCheckIns / possibleCheckIns) * 100);
+    }
+    // ========== HELPER METHODS ==========
+    /**
+     * Safe method untuk get date key
+     */
+    getDateKey(date) {
+        try {
+            const isoString = date.toISOString();
+            const parts = isoString.split("T");
+            if (parts.length < 2)
+                return null;
+            const dateKey = parts[0];
+            return dateKey || null;
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    /**
+     * Extract unique dates dari check-ins
+     */
+    extractUniqueDates(checkIns) {
+        const dates = new Set();
+        checkIns.forEach((checkIn) => {
+            const dateKey = this.getDateKey(new Date(checkIn.date));
+            if (dateKey) {
+                dates.add(dateKey);
+            }
+        });
+        return dates;
+    }
+    /**
+     * Hitung streak dari Set of dates
+     */
+    calculateStreakFromDates(checkInDates) {
         let streak = 0;
         let currentDate = new Date();
         currentDate.setHours(0, 0, 0, 0);
-        while (true) {
-            const hasCheckIn = await this.prisma.checkIn.findFirst({
-                where: {
-                    userId,
-                    date: {
-                        gte: currentDate,
-                        lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)
-                    }
-                }
-            });
-            if (!hasCheckIn)
+        // Max streak 60 hari
+        for (let i = 0; i < 60; i++) {
+            const dateKey = this.getDateKey(currentDate);
+            if (!dateKey)
+                break; // Guard clause
+            if (checkInDates.has(dateKey)) {
+                streak++;
+                currentDate.setDate(currentDate.getDate() - 1);
+            }
+            else {
                 break;
-            streak++;
-            currentDate.setDate(currentDate.getDate() - 1); // Sehari sebelumnya
+            }
         }
         return streak;
+    }
+    /**
+     * Group check-ins by day
+     */
+    groupCheckInsByDay(checkIns) {
+        const map = new Map();
+        checkIns.forEach((checkIn) => {
+            const dateKey = this.getDateKey(new Date(checkIn.date));
+            if (!dateKey)
+                return; // Guard clause
+            map.set(dateKey, (map.get(dateKey) || 0) + 1);
+        });
+        return map;
     }
 }
