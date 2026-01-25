@@ -21,14 +21,20 @@ export class CheckInController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const { habitId, note } = req.body;
+    const { habitId, note, date } = req.body;
 
     if (!habitId) throw new Error("Habit ID diperlukan");
+
+    // Validate date format if provided
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new Error("Format tanggal harus YYYY-MM-DD");
+    }
 
     const checkIn = await this.checkInService.createCheckIn({
       habitId,
       userId,
       note,
+      date,
     });
 
     successResponse(res, "CheckIn berhasil dibuat", checkIn, null, 201);
@@ -43,7 +49,7 @@ export class CheckInController {
 
     const checkIn = await this.checkInService.updateCheckIn(
       checkInId,
-      req.body,
+      { note: req.body.note },
       userId,
     );
 

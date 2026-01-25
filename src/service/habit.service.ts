@@ -6,7 +6,31 @@ import type {
   Category,
 } from "@prisma/client";
 import type { IHabitRepository } from "../repository/habit.repository.js";
-import { getTodayRange } from "../utils/timeUtils.js";
+import {
+  parseDateFromFE,
+  formatDateForFE,
+  getTodayDateString,
+  getDateRangeForQuery,
+  isValidDateString,
+} from "../utils/timeUtils.js";
+
+// 🆕 Interface untuk response ke FE
+export interface HabitResponse {
+  id: string;
+  title: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  startDate: string; // 🆕 String untuk FE
+  frequency: Frequency;
+  userId: string;
+  categoryId: string | null;
+  currentStreak: number;
+  longestStreak: number;
+  category?: Category | null;
+  checkIn?: CheckIn[];
+}
 
 interface FindAllParams {
   page: number;
@@ -19,7 +43,7 @@ interface FindAllParams {
 }
 
 export interface HabitListResponse {
-  habit: Habit[];
+  habits: HabitResponse[]; // 🆕 Ganti ke HabitResponse
   total: number;
   totalPages: number;
   currentPage: number;
@@ -27,7 +51,7 @@ export interface HabitListResponse {
 
 export interface IHabitService {
   getAll(params: FindAllParams, userId: string): Promise<HabitListResponse>;
-  getHabitById(id: string, userId: string): Promise<Habit>;
+  getHabitById(id: string, userId: string): Promise<HabitResponse>;
   createHabit(data: {
     title: string;
     description?: string;
@@ -36,10 +60,14 @@ export interface IHabitService {
     categoryId?: string;
     startDate: string;
     frequency: Frequency;
-  }): Promise<Habit>;
-  updateHabit(id: string, data: Partial<Habit>, userId: string): Promise<Habit>;
-  deleteHabit(id: string, userId: string): Promise<Habit>;
-  toggleHabit(id: string, userId: string): Promise<Habit>;
+  }): Promise<HabitResponse>;
+  updateHabit(
+    id: string,
+    data: Partial<Habit>,
+    userId: string,
+  ): Promise<HabitResponse>;
+  deleteHabit(id: string, userId: string): Promise<HabitResponse>;
+  toggleHabit(id: string, userId: string): Promise<HabitResponse>;
   getHabitsWithTodayStatus(userId: string): Promise<any[]>;
 }
 
@@ -51,12 +79,9 @@ export class HabitService implements IHabitService {
     userId: string,
   ): Promise<HabitListResponse> {
     const { page, limit, search, sortBy, sortOrder } = params;
-
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.HabitWhereInput = {
-      userId: userId, // Auto-filter by user
-    };
+    const whereClause: Prisma.HabitWhereInput = { userId };
 
     if (search?.title) {
       whereClause.title = { contains: search.title, mode: "insensitive" };
@@ -66,36 +91,40 @@ export class HabitService implements IHabitService {
       ? { [sortBy]: sortOrder || "desc" }
       : { createdAt: "desc" };
 
-    const habit = await this.habitRepo.list(
+    const habits = await this.habitRepo.list(
       skip,
       limit,
       whereClause,
       sortCriteria,
     );
 
+    // 🆕 Format semua habits untuk FE
+    const formattedHabits = habits.map((habit) =>
+      this.formatHabitResponse(habit),
+    );
+
     const total = await this.habitRepo.countAll(whereClause);
 
     return {
-      habit,
+      habits: formattedHabits,
       total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     };
   }
 
-  async getHabitById(id: string, userId: string): Promise<Habit> {
+  async getHabitById(id: string, userId: string): Promise<HabitResponse> {
     const habit = await this.habitRepo.findById(id);
 
     if (!habit) {
       throw new Error("Habit tidak ditemukan");
     }
 
-    // Auto-validate ownership
     if (habit.userId !== userId) {
       throw new Error("Habit tidak ditemukan");
     }
 
-    return habit;
+    return this.formatHabitResponse(habit);
   }
 
   async createHabit(data: {
@@ -106,10 +135,17 @@ export class HabitService implements IHabitService {
     categoryId?: string;
     startDate: string;
     frequency: Frequency;
-  }): Promise<Habit> {
-    // Validasi input
+  }): Promise<HabitResponse> {
     if (!data.title || data.title.trim().length < 3) {
       throw new Error("Title harus minimal 3 karakter");
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate)) {
+      throw new Error("Format startDate harus YYYY-MM-DD");
+    }
+
+    if (!isValidDateString(data.startDate)) {
+      throw new Error("Tanggal tidak valid");
     }
 
     const habitData: Prisma.HabitCreateInput = {
@@ -117,7 +153,7 @@ export class HabitService implements IHabitService {
       description: data.description?.trim() || null,
       isActive: data.isActive ?? true,
       user: { connect: { id: data.userId } },
-      startDate: new Date(data.startDate),
+      startDate: parseDateFromFE(data.startDate),
       frequency: data.frequency,
     };
 
@@ -125,45 +161,50 @@ export class HabitService implements IHabitService {
       habitData.category = { connect: { id: data.categoryId } };
     }
 
-    return await this.habitRepo.create(habitData);
+    const habit = await this.habitRepo.create(habitData);
+    return this.formatHabitResponse(habit);
   }
 
   async updateHabit(
     id: string,
     data: Partial<Habit>,
     userId: string,
-  ): Promise<Habit> {
-    // Validasi ownership
+  ): Promise<HabitResponse> {
     await this.getHabitById(id, userId);
 
-    return await this.habitRepo.update(id, data);
+    const updateData: Prisma.HabitUpdateInput = { ...data };
+
+    // 🆕 Handle date conversion jika update startDate
+    if (data.startDate && typeof data.startDate === "string") {
+      if (!isValidDateString(data.startDate)) {
+        throw new Error("Format startDate harus YYYY-MM-DD");
+      }
+      updateData.startDate = parseDateFromFE(data.startDate);
+    }
+
+    const updated = await this.habitRepo.update(id, updateData);
+    return this.formatHabitResponse(updated);
   }
 
-  async deleteHabit(id: string, userId: string): Promise<Habit> {
-    // Validasi ownership
-    await this.getHabitById(id, userId);
-
-    return await this.habitRepo.softDelete(id);
+  async deleteHabit(id: string, userId: string): Promise<HabitResponse> {
+    await this.getHabitById(id, userId); // Validasi ownership saja
+    const deleted = await this.habitRepo.update(id, { isActive: false });
+    return this.formatHabitResponse(deleted);
   }
 
-  async toggleHabit(id: string, userId: string): Promise<Habit> {
-    const habit = await this.getHabitById(id, userId);
-
-    return await this.habitRepo.update(id, {
+  async toggleHabit(id: string, userId: string): Promise<HabitResponse> {
+    const habit = await this.getHabitById(id, userId); // Tetap perlu untuk ambil status
+    const toggled = await this.habitRepo.update(id, {
       isActive: !habit.isActive,
     });
+    return this.formatHabitResponse(toggled);
   }
 
   async getHabitsWithTodayStatus(userId: string): Promise<any[]> {
-    const { start, end } = getTodayRange();
+    const todayStr = getTodayDateString();
+    const { start, end } = getDateRangeForQuery(todayStr);
 
-    // Type the result from Prisma
-    type HabitWithCheckIns = Habit & {
-      category: Category | null;
-      checkIn: CheckIn[];
-    };
-
-    const habits = (await (this.habitRepo as any).prisma.habit.findMany({
+    const habits = await (this.habitRepo as any).prisma.habit.findMany({
       where: {
         userId,
         isActive: true,
@@ -185,78 +226,51 @@ export class HabitService implements IHabitService {
         },
       },
       orderBy: { createdAt: "desc" },
-    })) as HabitWithCheckIns[];
+    });
 
-    // Format response untuk FE
-    return habits.map((habit: HabitWithCheckIns) => ({
+    return habits.map((habit: any) => ({
       id: habit.id,
       title: habit.title,
       description: habit.description,
       frequency: habit.frequency,
       isActive: habit.isActive,
       category: habit.category,
-      startDate: habit.startDate,
+      startDate: formatDateForFE(habit.startDate),
       currentStreak: habit.currentStreak,
       longestStreak: habit.longestStreak,
       createdAt: habit.createdAt,
 
-      // ✅ CRITICAL FOR FE: Check-in status today
       isCheckedToday: habit.checkIn.length > 0,
-      todayCheckIn: habit.checkIn[0] || null,
+      todayCheckIn: habit.checkIn[0]
+        ? {
+            ...habit.checkIn[0],
+            date: formatDateForFE(habit.checkIn[0].date),
+          }
+        : null,
 
-      // Bonus info untuk FE
       canCheckInToday: habit.isActive && habit.checkIn.length === 0,
-      totalCheckIns: 0, // Bisa dihitung jika perlu
     }));
   }
 
-  async getHabitWithDateRangeStatus(
-    habitId: string,
-    userId: string,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<any> {
-    // Validasi ownership
-    const habit = await this.getHabitById(habitId, userId);
-
-    const checkIns = (await (this.habitRepo as any).prisma.checkIn.findMany({
-      where: {
-        habitId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      select: {
-        id: true,
-        date: true,
-        note: true,
-      },
-      orderBy: { date: "asc" },
-    })) as CheckIn[];
-
-    // Format untuk calendar view di FE
-    const checkInDates = new Set(
-      checkIns.map((checkIn: CheckIn) => {
-        const date = new Date(checkIn.date);
-        return date.toISOString().split("T")[0]; // YYYY-MM-DD
-      }),
-    );
-
+  // 🆕 Helper method untuk format response
+  private formatHabitResponse(
+    habit: Habit & { category?: Category; checkIn?: CheckIn[] },
+  ): HabitResponse {
     return {
-      habit: {
-        id: habit.id,
-        title: habit.title,
-        description: habit.description,
-        frequency: habit.frequency,
-      },
-      checkIns,
-      checkInDates: Array.from(checkInDates),
-      totalDaysInRange:
-        Math.ceil(
-          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-        ) + 1,
-      completedDays: checkInDates.size,
+      id: habit.id,
+      title: habit.title,
+      description: habit.description,
+      isActive: habit.isActive,
+      createdAt: habit.createdAt,
+      updatedAt: habit.updatedAt,
+      startDate: formatDateForFE(habit.startDate), // 🆕 Convert ke string
+      frequency: habit.frequency,
+      userId: habit.userId,
+      categoryId: habit.categoryId,
+      currentStreak: habit.currentStreak,
+      longestStreak: habit.longestStreak,
+      category: habit.category || null,
+      checkIn: habit.checkIn || [],
     };
   }
 }

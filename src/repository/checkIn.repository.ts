@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient, CheckIn } from "@prisma/client";
-import { getStartOfDate } from "../utils/timeUtils.js";
+import { getStartOfDay } from "../utils/timeUtils.js";
 
 export interface ICheckInRepository {
   list(
@@ -9,10 +9,10 @@ export interface ICheckInRepository {
     orderBy: Prisma.CheckInOrderByWithRelationInput,
   ): Promise<CheckIn[]>;
   findById(id: string): Promise<CheckIn | null>;
+  findByDate(habitId: string, dateString: string): Promise<CheckIn | null>;
   create(data: Prisma.CheckInCreateInput): Promise<CheckIn>;
-  findTodayCheckIn(habitId: string, date: Date): Promise<CheckIn | null>;
   update(id: string, data: Prisma.CheckInUpdateInput): Promise<CheckIn>;
-  softDelete(id: string): Promise<CheckIn>;
+  delete(id: string): Promise<CheckIn>;
 }
 
 export class CheckInRepository implements ICheckInRepository {
@@ -38,9 +38,7 @@ export class CheckInRepository implements ICheckInRepository {
 
   async findById(id: string): Promise<CheckIn | null> {
     return await this.prisma.checkIn.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
       include: {
         habit: true,
         user: true,
@@ -48,18 +46,13 @@ export class CheckInRepository implements ICheckInRepository {
     });
   }
 
-  async findTodayCheckIn(habitId: string, date: Date): Promise<CheckIn | null> {
-    const startOfDay = getStartOfDate(date);
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setHours(23, 59, 59, 999);
-
+  async findByDate(habitId: string, dateString: string): Promise<CheckIn | null> {
+    const date = getStartOfDay(dateString);
+    
     return await this.prisma.checkIn.findFirst({
       where: {
         habitId,
-        date: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+        date,
       },
     });
   }
@@ -70,19 +63,14 @@ export class CheckInRepository implements ICheckInRepository {
 
   async update(id: string, data: Prisma.CheckInUpdateInput): Promise<CheckIn> {
     return await this.prisma.checkIn.update({
-      where: {
-        id,
-      },
+      where: { id },
       data,
     });
   }
 
-  async softDelete(id: string): Promise<CheckIn> {
-    return await this.prisma.checkIn.update({
-      where: {
-        id,
-      },
-      data: {},
+  async delete(id: string): Promise<CheckIn> {
+    return await this.prisma.checkIn.delete({
+      where: { id },
     });
   }
 }

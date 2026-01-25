@@ -1,49 +1,70 @@
-import type { CheckIn } from "@prisma/client";
+import type { CheckIn, Prisma } from "@prisma/client";
 import type { ICheckInRepository } from "../repository/checkIn.repository.js";
 import prisma from "../database.js";
-import { getTodayRange } from "../utils/timeUtils.js";
+import {
+  parseDateFromFE,
+  formatDateForFE,
+  getTodayDateString,
+  isValidDateString,
+} from "../utils/timeUtils.js";
+
+// Interface untuk response ke FE
+export interface CheckInResponse {
+  id: string;
+  habitId: string;
+  userId: string;
+  date: string; // String untuk FE
+  note: string | null;
+  createdAt: Date;
+  habit?: any;
+  user?: any;
+}
 
 export interface ICheckInService {
-  getCheckInById(id: string, userId: string): Promise<CheckIn>;
+  getCheckInById(id: string, userId: string): Promise<CheckInResponse>;
   createCheckIn(data: {
     note?: string;
     habitId: string;
     userId: string;
-  }): Promise<CheckIn>;
+    date?: string;
+  }): Promise<CheckInResponse>;
   updateCheckIn(
     id: string,
-    data: Partial<CheckIn>,
+    data: { note?: string },
     userId: string,
-  ): Promise<CheckIn>;
-  deleteCheckIn(id: string, userId: string): Promise<CheckIn>;
+  ): Promise<CheckInResponse>;
+  deleteCheckIn(id: string, userId: string): Promise<CheckInResponse>;
 }
 
 export class CheckInService implements ICheckInService {
   constructor(private checkInRepo: ICheckInRepository) {}
 
-  async getCheckInById(id: string, userId: string): Promise<CheckIn> {
+  async getCheckInById(id: string, userId: string): Promise<CheckInResponse> {
     const checkIn = await this.checkInRepo.findById(id);
 
     if (!checkIn) {
       throw new Error("CheckIn tidak ditemukan");
     }
 
-    // Auto-validate ownership
     if (checkIn.userId !== userId) {
-      throw new Error("CheckIn tidak ditemukan");
+      throw new Error("Akses ditolak");
     }
 
-    return checkIn;
+    return this.formatCheckInResponse(checkIn);
   }
 
   async createCheckIn(data: {
     note?: string;
     habitId: string;
     userId: string;
-  }): Promise<CheckIn> {
-    const { start, end } = getTodayRange();
+    date?: string;
+  }): Promise<CheckInResponse> {
+    const checkInDateStr = data.date && isValidDateString(data.date)
+      ? data.date
+      : getTodayDateString();
 
-    // Validasi: Habit harus milik user DAN aktif
+    const checkInDate = parseDateFromFE(checkInDateStr);
+
     const habit = await prisma.habit.findFirst({
       where: {
         id: data.habitId,
@@ -56,48 +77,82 @@ export class CheckInService implements ICheckInService {
       throw new Error("Habit tidak ditemukan atau tidak aktif");
     }
 
-    // Cek apakah sudah check-in hari ini
-    const existingCheckIn = await prisma.checkIn.findFirst({
-      where: {
-        habitId: data.habitId,
-        userId: data.userId,
-        date: {
-          gte: start,
-          lte: end,
-        },
-      },
-    });
-
-    if (existingCheckIn) {
-      throw new Error("Sudah check-in hari ini");
+    if (checkInDate < habit.startDate) {
+      const habitStartStr = formatDateForFE(habit.startDate);
+      throw new Error(`Tidak bisa check-in sebelum ${habitStartStr}`);
     }
 
-    // Buat check-in
-    const input: any = {
-      date: new Date(), // Waktu sekarang (WIB)
-      note: data.note,
+    const existingCheckIn = await this.checkInRepo.findByDate(
+      data.habitId,
+      checkInDateStr,
+    );
+
+    if (existingCheckIn) {
+      throw new Error(`Sudah check-in pada tanggal ${checkInDateStr}`);
+    }
+
+    // 🆕 FIX: Handle undefined untuk note dengan benar
+    const input: Prisma.CheckInCreateInput = {
+      date: checkInDate,
       habit: { connect: { id: data.habitId } },
       user: { connect: { id: data.userId } },
     };
 
-    return await this.checkInRepo.create(input);
+    // 🆕 Tambahkan note hanya jika ada
+    if (data.note !== undefined) {
+      input.note = data.note;
+    }
+
+    const checkIn = await this.checkInRepo.create(input);
+    return this.formatCheckInResponse(checkIn);
   }
 
   async updateCheckIn(
     id: string,
-    data: Partial<CheckIn>,
+    data: { note?: string },
     userId: string,
-  ): Promise<CheckIn> {
-    // Validasi ownership
+  ): Promise<CheckInResponse> {
     await this.getCheckInById(id, userId);
-
-    return await this.checkInRepo.update(id, data);
+    
+    // 🆕 FIX: Handle undefined untuk update
+    const updateData: Prisma.CheckInUpdateInput = {};
+    
+    if (data.note !== undefined) {
+      updateData.note = data.note;
+    }
+    
+    const updated = await this.checkInRepo.update(id, updateData);
+    return this.formatCheckInResponse(updated);
   }
 
-  async deleteCheckIn(id: string, userId: string): Promise<CheckIn> {
-    // Validasi ownership
+  async deleteCheckIn(id: string, userId: string): Promise<CheckInResponse> {
     await this.getCheckInById(id, userId);
+    
+    const deleted = await this.checkInRepo.delete(id);
+    return this.formatCheckInResponse(deleted);
+  }
 
-    return await this.checkInRepo.softDelete(id);
+  private formatCheckInResponse(checkIn: CheckIn): CheckInResponse {
+    const response: CheckInResponse = {
+      id: checkIn.id,
+      habitId: checkIn.habitId,
+      userId: checkIn.userId,
+      date: formatDateForFE(checkIn.date),
+      note: checkIn.note,
+      createdAt: checkIn.createdAt,
+    };
+
+    // Type guard untuk relations
+    const checkInWithRelations = checkIn as any;
+    
+    if (checkInWithRelations.habit) {
+      response.habit = checkInWithRelations.habit;
+    }
+    
+    if (checkInWithRelations.user) {
+      response.user = checkInWithRelations.user;
+    }
+
+    return response;
   }
 }

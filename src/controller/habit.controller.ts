@@ -38,7 +38,7 @@ export class HabitController {
     successResponse(
       res,
       "Daftar habit berhasil diambil",
-      result.habit,
+      result.habits, // 🆕 Sudah formatted
       pagination,
     );
   });
@@ -65,9 +65,9 @@ export class HabitController {
     if (!startDate) throw new Error("startDate diperlukan");
     if (!frequency) throw new Error("frequency diperlukan");
 
-    const normalizedStartDate = new Date(`${startDate}T00:00:00`);
-    if (isNaN(normalizedStartDate.getTime())) {
-      throw new Error("Format startDate tidak valid");
+    // 🆕 Validasi format tanggal
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      throw new Error("Format startDate harus YYYY-MM-DD");
     }
 
     if (!Object.values(Frequency).includes(frequency)) {
@@ -93,6 +93,11 @@ export class HabitController {
 
     const habitId = req.params.id;
     if (!habitId) throw new Error("Habit ID diperlukan");
+
+    // 🆕 Validasi format tanggal jika di-update
+    if (req.body.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(req.body.startDate)) {
+      throw new Error("Format startDate harus YYYY-MM-DD");
+    }
 
     const habit = await this.habitService.updateHabit(
       habitId,
@@ -129,7 +134,6 @@ export class HabitController {
     successResponse(res, message, toggledHabit);
   });
 
-  // ✅ NEW: Get habits with today's check-in status
   getHabitsWithTodayStatusHandler = asyncHandler(
     async (req: Request, res: Response) => {
       const userId = req.user?.id;

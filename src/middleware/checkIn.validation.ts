@@ -7,6 +7,11 @@ export const createCheckInValidation = [
     .isUUID()
     .withMessage("Habit ID harus format UUID"),
 
+  body("date")
+    .optional()
+    .matches(/^\d{4}-\d{2}-\d{2}$/)
+    .withMessage("Format tanggal harus YYYY-MM-DD"),
+
   body("note")
     .optional()
     .trim()
