@@ -27,7 +27,7 @@ export class DashboardRepository {
     });
 
     // 4. Hitung streak (OPTIMIZED)
-    const streak = await this.calculateStreakOptimized(userId);
+    const streak = await this.calculateUserStreak(userId);
 
     return {
       totalHabits,
@@ -63,7 +63,7 @@ export class DashboardRepository {
       description: habit.description,
       category: habit.category?.name || "No category",
       isCompleted: habit.checkIn.length > 0,
-      checkInDate: habit.checkIn[0] 
+      checkInDate: habit.checkIn[0]
         ? formatDateForFE(habit.checkIn[0].date)
         : null,
       checkInTime: habit.checkIn[0]?.createdAt || null,
@@ -100,7 +100,7 @@ export class DashboardRepository {
 
   // ========== PRIVATE HELPER METHODS ==========
 
-  private async calculateStreakOptimized(userId: string): Promise<number> {
+  private async calculateUserStreak(userId: string): Promise<number> {
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
     sixtyDaysAgo.setHours(0, 0, 0, 0);
@@ -128,7 +128,7 @@ export class DashboardRepository {
 
     for (let i = 0; i < 60; i++) {
       const dateStr = formatDateForFE(currentDate);
-      
+
       if (checkInDates.has(dateStr)) {
         streak++;
         currentDate.setDate(currentDate.getDate() - 1);
@@ -140,9 +140,7 @@ export class DashboardRepository {
     return streak;
   }
 
-  /**
-   * Progress 7 hari terakhir
-   */
+  //Progress 7 hari terakhir
   private async getLast7DaysStats(userId: string) {
     const checkIns = await this.prisma.checkIn.findMany({
       where: { userId },

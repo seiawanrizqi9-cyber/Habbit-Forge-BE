@@ -26,10 +26,12 @@ export interface HabitResponse {
   frequency: Frequency;
   userId: string;
   categoryId: string | null;
-  currentStreak: number;
-  longestStreak: number;
   category?: Category | null;
   checkIn?: CheckIn[];
+  streak?: {
+    current: number;
+    longest: number;
+  };
 }
 
 interface FindAllParams {
@@ -252,7 +254,81 @@ export class HabitService implements IHabitService {
     }));
   }
 
-  // 🆕 Helper method untuk format response
+  async getHabitWithStreak(
+    id: string,
+    userId: string,
+  ): Promise<HabitResponse & { streak: { current: number; longest: number } }> {
+    const habit = await this.getHabitById(id, userId);
+
+    // Hitung streak real-time
+    const streak = await this.calculateHabitStreak(id);
+
+    return {
+      ...habit,
+      streak,
+    };
+  }
+
+  private async calculateHabitStreak(
+    habitId: string,
+  ): Promise<{ current: number; longest: number }> {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    ninetyDaysAgo.setHours(0, 0, 0, 0);
+
+    const checkIns = await (this.habitRepo as any).prisma.checkIn.findMany({
+      where: {
+        habitId,
+        date: { gte: ninetyDaysAgo },
+      },
+      select: { date: true },
+      orderBy: { date: "desc" },
+    });
+
+    // Convert to date strings
+    const checkInDates = new Set<string>();
+    checkIns.forEach((checkIn: { date: Date }) => {
+      const dateStr = formatDateForFE(checkIn.date);
+      checkInDates.add(dateStr);
+    });
+
+    // Calculate current streak
+    let currentStreak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 90; i++) {
+      const dateStr = formatDateForFE(currentDate);
+      if (checkInDates.has(dateStr)) {
+        currentStreak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    let longestStreak = 0;
+    let tempStreak = 0;
+    let tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - 89); // Start 89 days ago
+
+    for (let i = 0; i < 90; i++) {
+      const dateStr = formatDateForFE(tempDate);
+      if (checkInDates.has(dateStr)) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+
+    return {
+      current: currentStreak,
+      longest: longestStreak,
+    };
+  }
+
   private formatHabitResponse(
     habit: Habit & { category?: Category; checkIn?: CheckIn[] },
   ): HabitResponse {
@@ -267,8 +343,6 @@ export class HabitService implements IHabitService {
       frequency: habit.frequency,
       userId: habit.userId,
       categoryId: habit.categoryId,
-      currentStreak: habit.currentStreak,
-      longestStreak: habit.longestStreak,
       category: habit.category || null,
       checkIn: habit.checkIn || [],
     };

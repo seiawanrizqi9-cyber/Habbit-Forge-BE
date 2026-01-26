@@ -9,8 +9,6 @@ model Habit {
   frequency     Frequency
   userId        String
   categoryId    String?
-  currentStreak Int       @default(0)
-  longestStreak Int       @default(0)
   checkIn       CheckIn[]
   category      Category? @relation(fields: [categoryId], references: [id])
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)

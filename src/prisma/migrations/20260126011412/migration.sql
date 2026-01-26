@@ -55,8 +55,6 @@ CREATE TABLE "habits" (
     "frequency" "Frequency" NOT NULL,
     "userId" TEXT NOT NULL,
     "categoryId" TEXT,
-    "currentStreak" INTEGER NOT NULL DEFAULT 0,
-    "longestStreak" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "habits_pkey" PRIMARY KEY ("id")
 );
