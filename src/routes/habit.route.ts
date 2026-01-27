@@ -29,25 +29,15 @@ const router = Router();
  *         name: page
  *         schema:
  *           type: integer
- *           minimum: 1
  *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           minimum: 1
- *           maximum: 100
  *           default: 10
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search by habit title
  *     responses:
  *       200:
  *         description: List of habits
- *       401:
- *         description: Unauthorized
  */
 router.get("/", authenticate, controller.getAllHabitHandler);
 
@@ -56,92 +46,32 @@ router.get("/", authenticate, controller.getAllHabitHandler);
  * /habit/today-status:
  *   get:
  *     summary: Get habits with today's check-in status
- *     description: Get all active habits with today's check-in completion status
  *     tags: [Habits]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Habits with today's check-in status
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Habits dengan status check-in hari ini berhasil diambil"
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                         format: uuid
- *                       title:
- *                         type: string
- *                         example: "Minum Air 8 Gelas"
- *                       description:
- *                         type: string
- *                         example: "Minimal 8 gelas air setiap hari"
- *                       frequency:
- *                         type: string
- *                         enum: [DAILY, WEEKLY, MONTHLY, YEARLY]
- *                         example: "DAILY"
- *                       isActive:
- *                         type: boolean
- *                         example: true
- *                       category:
- *                         type: object
- *                         properties:
- *                           id:
- *                             type: string
- *                             format: uuid
- *                           name:
- *                             type: string
- *                             example: "HEALTHY"
- *                       startDate:
- *                         type: string
- *                         format: date-time
- *                       currentStreak:
- *                         type: integer
- *                         example: 14
- *                       longestStreak:
- *                         type: integer
- *                         example: 30
- *                       isCheckedToday:
- *                         type: boolean
- *                         description: "Whether habit has been checked in today"
- *                         example: true
- *                       todayCheckIn:
- *                         type: object
- *                         nullable: true
- *                         properties:
- *                           id:
- *                             type: string
- *                             format: uuid
- *                           date:
- *                             type: string
- *                             format: date-time
- *                           note:
- *                             type: string
- *                             example: "Sudah minum 8 gelas"
- *                       canCheckInToday:
- *                         type: boolean
- *                         description: "Whether user can check in today"
- *                         example: false
- *       401:
- *         description: Unauthorized
+ *         description: Habits with check-in status
  */
 router.get(
   "/today-status",
   authenticate,
   controller.getHabitsWithTodayStatusHandler,
 );
+
+/**
+ * @swagger
+ * /habit/categories:
+ *   get:
+ *     summary: Get available category enum values
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of available categories
+ */
+router.get("/categories", authenticate, controller.getCategoriesHandler);
 
 /**
  * @swagger
@@ -165,37 +95,22 @@ router.get(
  *               title:
  *                 type: string
  *                 minLength: 3
- *                 maxLength: 100
- *                 example: "Minum Air 8 Gelas"
  *               description:
  *                 type: string
- *                 maxLength: 500
- *                 example: "Minimal 8 gelas air setiap hari"
  *               isActive:
  *                 type: boolean
- *                 default: true
- *               categoryId:
+ *               category:
  *                 type: string
- *                 format: uuid
- *                 example: "550e8400-e29b-41d4-a716-446655440001"
+ *                 enum: [HEALTHY, FINANCE, WORK, LEARNING, SOCIAL]
  *               startDate:
  *                 type: string
  *                 format: date
- *                 description: "Start date in YYYY-MM-DD format"
- *                 example: "2024-01-15"
  *               frequency:
  *                 type: string
- *                 enum:
- *                   - DAILY
- *                   - WEEKLY
- *                   - MONTHLY
- *                   - YEARLY
- *                 example: "DAILY"
+ *                 enum: [DAILY, WEEKLY, MONTHLY, YEARLY]
  *     responses:
  *       201:
- *         description: Habit created successfully
- *       400:
- *         description: Validation error
+ *         description: Habit created
  */
 router.post(
   "/",
@@ -222,8 +137,6 @@ router.post(
  *     responses:
  *       200:
  *         description: Habit details
- *       404:
- *         description: Habit not found
  */
 router.get("/:id", authenticate, controller.getHabitByIdHandler);
 
@@ -250,32 +163,12 @@ router.get("/:id", authenticate, controller.getHabitByIdHandler);
  *             properties:
  *               title:
  *                 type: string
- *                 minLength: 3
- *                 maxLength: 100
- *               description:
+ *               category:
  *                 type: string
- *                 maxLength: 500
- *               isActive:
- *                 type: boolean
- *               categoryId:
- *                 type: string
- *                 format: uuid
- *               startDate:
- *                 type: string
- *                 format: date-time
- *                 example: "2024-01-15T00:00:00Z"
- *               frequency:
- *                 type: string
- *                 enum:
- *                   - DAILY
- *                   - WEEKLY
- *                   - MONTHLY
- *                   - YEARLY
+ *                 enum: [HEALTHY, FINANCE, WORK, LEARNING, SOCIAL]
  *     responses:
  *       200:
- *         description: Habit updated successfully
- *       404:
- *         description: Habit not found
+ *         description: Habit updated
  */
 router.put(
   "/:id",
@@ -288,8 +181,7 @@ router.put(
  * @swagger
  * /habit/{id}:
  *   delete:
- *     summary: Delete habit (PERMANENT DELETE)
- *     description: "⚠️ PERINGATAN: Habit akan dihapus permanen beserta semua check-in terkait!"
+ *     summary: Delete habit permanently
  *     tags: [Habits]
  *     security:
  *       - bearerAuth: []
@@ -302,9 +194,7 @@ router.put(
  *           format: uuid
  *     responses:
  *       200:
- *         description: Habit deleted permanently
- *       404:
- *         description: Habit not found
+ *         description: Habit deleted
  */
 router.delete("/:id", authenticate, controller.deleteHabitHandler);
 
@@ -326,8 +216,6 @@ router.delete("/:id", authenticate, controller.deleteHabitHandler);
  *     responses:
  *       200:
  *         description: Habit status toggled
- *       404:
- *         description: Habit not found
  */
 router.put("/:id/toggle", authenticate, controller.toggleHabitHandler);
 

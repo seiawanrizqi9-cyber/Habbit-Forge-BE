@@ -1,19 +1,8 @@
 -- CreateEnum
+CREATE TYPE "Category" AS ENUM ('HEALTH', 'FINANCE', 'WORK', 'LEARNING', 'SOCIAL');
+
+-- CreateEnum
 CREATE TYPE "Frequency" AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY');
-
--- CreateTable
-CREATE TABLE "categories" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT,
-    "color" TEXT,
-    "icon" TEXT,
-    "isSystem" BOOLEAN NOT NULL DEFAULT false,
-    "userId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
-);
 
 -- CreateTable
 CREATE TABLE "checkins" (
@@ -53,7 +42,7 @@ CREATE TABLE "habits" (
     "startDate" TIMESTAMP(3) NOT NULL,
     "frequency" "Frequency" NOT NULL,
     "userId" TEXT NOT NULL,
-    "categoryId" TEXT,
+    "category" "Category",
 
     CONSTRAINT "habits_pkey" PRIMARY KEY ("id")
 );
@@ -82,9 +71,6 @@ CREATE TABLE "users" (
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "categories_name_userId_key" ON "categories"("name", "userId");
 
 -- CreateIndex
 CREATE INDEX "checkins_userId_date_idx" ON "checkins"("userId", "date");
@@ -117,9 +103,6 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- AddForeignKey
-ALTER TABLE "categories" ADD CONSTRAINT "categories_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "checkins" ADD CONSTRAINT "checkins_habitId_fkey" FOREIGN KEY ("habitId") REFERENCES "habits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -127,9 +110,6 @@ ALTER TABLE "checkins" ADD CONSTRAINT "checkins_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "daily_stats" ADD CONSTRAINT "daily_stats_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "habits" ADD CONSTRAINT "habits_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "habits" ADD CONSTRAINT "habits_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

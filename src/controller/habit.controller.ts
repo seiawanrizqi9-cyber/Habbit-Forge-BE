@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { successResponse } from "../utils/response.js";
 import type { IHabitService } from "../service/habit.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { Frequency } from "@prisma/client";
+import { Frequency, Category } from "@prisma/client";
 import { isValidDateString } from "../utils/timeUtils.js";
 
 export class HabitController {
@@ -17,10 +17,9 @@ export class HabitController {
     const search = req.query.search as any;
     const sortBy = req.query.sortBy as string;
     const sortOrder = (req.query.sortOrder as "asc" | "desc") || "desc";
-    const date = req.query.date as string; // 🆕 Filter check-ins by date
-    const showInactive = req.query.showInactive === "true"; // 🆕 Show inactive habits
+    const date = req.query.date as string;
+    const showInactive = req.query.showInactive === "true";
 
-    // 🆕 Validasi format tanggal jika ada
     if (date && !isValidDateString(date)) {
       throw new Error("Format tanggal harus YYYY-MM-DD");
     }
@@ -32,8 +31,8 @@ export class HabitController {
         search,
         sortBy,
         sortOrder,
-        includeCheckInsForDate: date, // 🆕 Pass date parameter
-        showInactive, // 🆕 Pass showInactive parameter
+        includeCheckInsForDate: date,
+        showInactive,
       },
       userId,
     );
@@ -60,21 +59,7 @@ export class HabitController {
     const habitId = req.params.id;
     if (!habitId) throw new Error("Habit ID diperlukan");
 
-    const date = req.query.date as string; // 🆕 Optional date filter
-
-    let habit;
-    if (date) {
-      // 🆕 Get habit with check-ins for specific date
-      if (!isValidDateString(date)) {
-        throw new Error("Format tanggal harus YYYY-MM-DD");
-      }
-      // Note: Service perlu method getHabitWithCheckIns
-      // Untuk sekarang pakai getHabitById dulu
-      habit = await this.habitService.getHabitById(habitId, userId);
-    } else {
-      habit = await this.habitService.getHabitById(habitId, userId);
-    }
-
+    const habit = await this.habitService.getHabitById(habitId, userId);
     successResponse(res, "Habit berhasil diambil", habit);
   });
 
@@ -82,14 +67,13 @@ export class HabitController {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const { title, description, isActive, categoryId, startDate, frequency } =
+    const { title, description, isActive, category, startDate, frequency } =
       req.body;
 
     if (!title) throw new Error("Title diperlukan");
     if (!startDate) throw new Error("startDate diperlukan");
     if (!frequency) throw new Error("frequency diperlukan");
 
-    // Validasi format tanggal
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
       throw new Error("Format startDate harus YYYY-MM-DD");
     }
@@ -102,12 +86,17 @@ export class HabitController {
       throw new Error("Frequency tidak valid");
     }
 
+    // Validate category if provided
+    if (category && !Object.values(Category).includes(category)) {
+      throw new Error("Kategori tidak valid");
+    }
+
     const habit = await this.habitService.createHabit({
       title,
       description,
       isActive,
       userId,
-      categoryId,
+      category: category || null,
       startDate,
       frequency,
     });
@@ -122,7 +111,6 @@ export class HabitController {
     const habitId = req.params.id;
     if (!habitId) throw new Error("Habit ID diperlukan");
 
-    // Validasi format tanggal jika di-update
     if (req.body.startDate) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(req.body.startDate)) {
         throw new Error("Format startDate harus YYYY-MM-DD");
@@ -130,6 +118,14 @@ export class HabitController {
       if (!isValidDateString(req.body.startDate)) {
         throw new Error("Tanggal tidak valid");
       }
+    }
+
+    // Validate category if provided
+    if (
+      req.body.category &&
+      !Object.values(Category).includes(req.body.category)
+    ) {
+      throw new Error("Kategori tidak valid");
     }
 
     const habit = await this.habitService.updateHabit(
@@ -159,15 +155,12 @@ export class HabitController {
     if (!habitId) throw new Error("Habit ID diperlukan");
 
     const toggledHabit = await this.habitService.toggleHabit(habitId, userId);
-
     const message = toggledHabit.isActive
       ? "Habit berhasil diaktifkan"
       : "Habit berhasil dinonaktifkan";
-
     successResponse(res, message, toggledHabit);
   });
 
-  // 🆕 Endpoint khusus untuk dashboard (hanya habit aktif dengan status hari ini)
   getHabitsWithTodayStatusHandler = asyncHandler(
     async (req: Request, res: Response) => {
       const userId = req.user?.id;
@@ -175,7 +168,6 @@ export class HabitController {
 
       const habitsWithStatus =
         await this.habitService.getHabitsWithTodayStatus(userId);
-
       successResponse(
         res,
         "Habits dengan status check-in hari ini berhasil diambil",
@@ -183,4 +175,10 @@ export class HabitController {
       );
     },
   );
+
+  // ✅ New endpoint untuk get available categories
+  getCategoriesHandler = asyncHandler(async (_req: Request, res: Response) => {
+    const categories = this.habitService.getAvailableCategories();
+    successResponse(res, "Daftar kategori berhasil diambil", categories);
+  });
 }

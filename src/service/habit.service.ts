@@ -1,4 +1,4 @@
-import type { Habit, Frequency } from "@prisma/client";
+import type { Habit, Frequency, Category } from "@prisma/client";
 import type { IHabitRepository } from "../repository/habit.repository.js";
 import {
   parseDateFromFE,
@@ -18,8 +18,7 @@ export interface HabitResponse {
   startDate: string;
   frequency: Frequency;
   userId: string;
-  categoryId: string | null;
-  category?: any;
+  category: Category | null;
   checkIn?: any[];
 }
 
@@ -29,7 +28,7 @@ interface FindAllParams {
   search?: { title?: string };
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  includeCheckInsForDate?: string;
+  includeCheckInsForDate?: string; // ✅ REMOVE unused warning
   showInactive?: boolean;
 }
 
@@ -41,14 +40,17 @@ export interface HabitListResponse {
 }
 
 export interface IHabitService {
-  getAll(params: FindAllParams, userId: string): Promise<HabitListResponse>;
+  getAll(
+    params: Omit<FindAllParams, "includeCheckInsForDate">,
+    userId: string,
+  ): Promise<HabitListResponse>;
   getHabitById(id: string, userId: string): Promise<HabitResponse>;
   createHabit(data: {
     title: string;
     description?: string;
     isActive?: boolean;
     userId: string;
-    categoryId?: string | null;
+    category?: Category | null;
     startDate: string;
     frequency: Frequency;
   }): Promise<HabitResponse>;
@@ -60,13 +62,18 @@ export interface IHabitService {
   deleteHabit(id: string, userId: string): Promise<HabitResponse>;
   toggleHabit(id: string, userId: string): Promise<HabitResponse>;
   getHabitsWithTodayStatus(userId: string): Promise<any[]>;
+  getAvailableCategories(): Category[];
 }
 
 export class HabitService implements IHabitService {
   constructor(private habitRepo: IHabitRepository) {}
 
+  getAvailableCategories(): Category[] {
+    return ["HEALTH", "FINANCE", "WORK", "LEARNING", "SOCIAL"]; // ✅ FIX: HEALTH bukan HEALTHY
+  }
+
   async getAll(
-    params: FindAllParams,
+    params: Omit<FindAllParams, "includeCheckInsForDate">,
     userId: string,
   ): Promise<HabitListResponse> {
     const {
@@ -98,11 +105,9 @@ export class HabitService implements IHabitService {
       whereClause,
       sortCriteria,
     );
-
     const formattedHabits = habits.map((habit) =>
       this.formatHabitResponse(habit),
     );
-
     const total = await this.habitRepo.countAll(whereClause);
 
     return {
@@ -132,7 +137,7 @@ export class HabitService implements IHabitService {
     description?: string;
     isActive?: boolean;
     userId: string;
-    categoryId?: string | null;
+    category?: Category | null;
     startDate: string;
     frequency: Frequency;
   }): Promise<HabitResponse> {
@@ -148,6 +153,13 @@ export class HabitService implements IHabitService {
       throw new Error("Tanggal tidak valid");
     }
 
+    if (
+      data.category &&
+      !this.getAvailableCategories().includes(data.category)
+    ) {
+      throw new Error("Kategori tidak valid");
+    }
+
     const habitData: any = {
       title: data.title.trim(),
       description: data.description?.trim() || null,
@@ -157,8 +169,8 @@ export class HabitService implements IHabitService {
       frequency: data.frequency,
     };
 
-    if (data.categoryId) {
-      habitData.category = { connect: { id: data.categoryId } };
+    if (data.category !== undefined) {
+      habitData.category = data.category;
     }
 
     const habit = await this.habitRepo.create(habitData);
@@ -179,6 +191,13 @@ export class HabitService implements IHabitService {
         throw new Error("Format startDate harus YYYY-MM-DD");
       }
       updateData.startDate = parseDateFromFE(data.startDate);
+    }
+
+    if (
+      data.category &&
+      !this.getAvailableCategories().includes(data.category)
+    ) {
+      throw new Error("Kategori tidak valid");
     }
 
     const updated = await this.habitRepo.update(id, updateData);
@@ -210,7 +229,6 @@ export class HabitService implements IHabitService {
           isActive: true,
         },
         include: {
-          category: true,
           checkIn: {
             where: {
               date: {
@@ -259,7 +277,6 @@ export class HabitService implements IHabitService {
       startDate: formatDateForFE(habit.startDate),
       frequency: habit.frequency,
       userId: habit.userId,
-      categoryId: habit.categoryId,
       category: habit.category || null,
       checkIn: habit.checkIn || [],
     };

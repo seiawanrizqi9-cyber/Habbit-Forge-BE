@@ -1,17 +1,5 @@
-model Category {
-  id          String       @id @default(uuid())
-  name        CategoryName @unique
-  color       String?
-  icon        String?
-  description String?
-  createdAt   DateTime     @default(now())
-  habit       Habit[]
-
-  @@map("categories")
-}
-
-enum CategoryName {
-  HEALTHY
+enum Category {
+  HEALTH
   FINANCE
   WORK
   LEARNING
