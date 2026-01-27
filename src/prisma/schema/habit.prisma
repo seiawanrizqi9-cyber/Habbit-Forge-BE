@@ -8,9 +8,7 @@ model Habit {
   startDate     DateTime
   frequency     Frequency
   userId        String
-  categoryId    String?
-  currentStreak Int       @default(0)
-  longestStreak Int       @default(0)
+  categoryId    String?   // Bisa null (no category) atau refer ke system/user category
   checkIn       CheckIn[]
   category      Category? @relation(fields: [categoryId], references: [id])
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)

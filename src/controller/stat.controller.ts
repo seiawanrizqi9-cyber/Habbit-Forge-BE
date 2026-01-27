@@ -2,7 +2,12 @@ import type { Request, Response } from "express";
 import prisma from "../database.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/response.js";
-import { formatDateForFE, parseDateFromFE } from "../utils/timeUtils.js";
+import { 
+  formatDateForFE, 
+  parseDateFromFE,
+  addDays,
+  getTodayDateString,
+} from "../utils/timeUtils.js";
 
 export const getHabitStreak = asyncHandler(
   async (req: Request, res: Response) => {
@@ -19,15 +24,14 @@ export const getHabitStreak = asyncHandler(
 
     if (!habit) throw new Error("Habit not found");
 
+    // Hitung streak real-time (UTC)
     const streak = await calculateHabitStreakOptimized(habitId);
 
     successResponse(res, "Streak berhasil diambil", {
       habitId,
       streak,
       habitTitle: habit.title,
-      currentStreak: habit.currentStreak,
-      longestStreak: habit.longestStreak,
-      startDate: formatDateForFE(habit.startDate), // 🆕 String
+      startDate: formatDateForFE(habit.startDate), // 🆕 UTC string
     });
   },
 );
@@ -38,8 +42,11 @@ export const getMonthlyStats = asyncHandler(
     if (!userId) throw new Error("Unauthorized");
 
     const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfMonth = parseDateFromFE(formatDateForFE(firstDay));
+    const firstDay = new Date(Date.UTC(
+      today.getUTCFullYear(), 
+      today.getUTCMonth(), 
+      1
+    ));
 
     const habits = await prisma.habit.count({
       where: { userId, isActive: true },
@@ -48,32 +55,48 @@ export const getMonthlyStats = asyncHandler(
     const checkIns = await prisma.checkIn.count({
       where: {
         userId,
-        date: { gte: startOfMonth },
+        date: { gte: firstDay },
       },
     });
 
-    const days = today.getDate();
-    const completion =
-      habits > 0 ? Math.round((checkIns / (habits * days)) * 100) : 0;
+    const days = today.getUTCDate(); // 🆕 UTC day
+    const completion = habits > 0 ? Math.round((checkIns / (habits * days)) * 100) : 0;
 
-    const topHabits = await prisma.habit.findMany({
+    // Ambil semua habits aktif untuk hitung streak
+    const allHabits = await prisma.habit.findMany({
       where: {
         userId,
         isActive: true,
-        currentStreak: { gt: 0 },
       },
       select: {
         id: true,
         title: true,
-        currentStreak: true,
-        startDate: true, // 🆕 Ambil startDate
+        startDate: true,
         category: {
           select: { name: true, color: true },
         },
       },
-      orderBy: { currentStreak: "desc" },
-      take: 3,
     });
+
+    // Hitung streak untuk setiap habit
+    const habitsWithStreak = await Promise.all(
+      allHabits.map(async (habit) => {
+        const streak = await calculateHabitStreakOptimized(habit.id);
+        return {
+          id: habit.id,
+          title: habit.title,
+          streak,
+          startDate: formatDateForFE(habit.startDate), // 🆕 UTC string
+          category: habit.category?.name || "No category",
+          color: habit.category?.color || "#6B7280",
+        };
+      })
+    );
+
+    // Sort by streak desc dan ambil top 3
+    const topHabits = habitsWithStreak
+      .sort((a, b) => b.streak - a.streak)
+      .slice(0, 3);
 
     successResponse(res, "Statistik bulanan berhasil diambil", {
       habits,
@@ -82,28 +105,21 @@ export const getMonthlyStats = asyncHandler(
       month: today.toLocaleDateString("id-ID", {
         month: "long",
         year: "numeric",
+        timeZone: "UTC", // 🆕 Display UTC month
       }),
-      topHabits: topHabits.map((habit) => ({
-        id: habit.id,
-        title: habit.title,
-        streak: habit.currentStreak,
-        startDate: formatDateForFE(habit.startDate), // 🆕 String
-        category: habit.category?.name || "No category",
-        color: habit.category?.color || "#6B7280",
-      })),
+      topHabits,
     });
   },
 );
 
+// Helper function untuk hitung streak habit (UTC)
 async function calculateHabitStreakOptimized(habitId: string): Promise<number> {
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-  ninetyDaysAgo.setHours(0, 0, 0, 0);
+  const ninetyDaysAgoStr = addDays(getTodayDateString(), -90); // 🆕 UTC date string
 
   const checkIns = await prisma.checkIn.findMany({
     where: {
       habitId,
-      date: { gte: ninetyDaysAgo },
+      date: { gte: parseDateFromFE(ninetyDaysAgoStr) }, // 🆕 UTC date
     },
     select: { date: true },
     orderBy: { date: "desc" },
@@ -111,19 +127,17 @@ async function calculateHabitStreakOptimized(habitId: string): Promise<number> {
 
   const checkInDates = new Set<string>();
   checkIns.forEach((checkIn) => {
-    const dateKey = formatDateForFE(checkIn.date); // Langsung pakai formatDateForFE
-    checkInDates.add(dateKey);
+    const dateStr = formatDateForFE(checkIn.date); // 🆕 UTC date string
+    checkInDates.add(dateStr);
   });
 
   let streak = 0;
-  let currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
+  let currentDateStr = getTodayDateString(); // 🆕 UTC today
 
   for (let i = 0; i < 90; i++) {
-    const dateKey = formatDateForFE(currentDate); // Langsung pakai formatDateForFE
-    if (checkInDates.has(dateKey)) {
+    if (checkInDates.has(currentDateStr)) {
       streak++;
-      currentDate.setDate(currentDate.getDate() - 1);
+      currentDateStr = addDays(currentDateStr, -1); // 🆕 Mundur 1 hari (UTC)
     } else {
       break;
     }
@@ -147,41 +161,44 @@ export const getWeeklyProgress = asyncHandler(
 
     if (!habit) throw new Error("Habit not found");
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    // Ambil check-ins 7 hari terakhir (UTC)
+    const sevenDaysAgoStr = addDays(getTodayDateString(), -6); // 🆕 UTC date string
 
     const checkIns = await prisma.checkIn.findMany({
       where: {
         habitId,
-        date: { gte: sevenDaysAgo },
+        date: { gte: parseDateFromFE(sevenDaysAgoStr) }, // 🆕 UTC date
       },
       select: { date: true },
     });
 
+    // Group by day (UTC dates)
     const checkInsByDay = new Set<string>();
     checkIns.forEach((checkIn) => {
-      const dateStr = formatDateForFE(checkIn.date); // 🆕 String
+      const dateStr = formatDateForFE(checkIn.date); // 🆕 UTC date string
       checkInsByDay.add(dateStr);
     });
 
+    // Format response (7 hari terakhir UTC)
     const weekProgress = [];
-    const today = new Date();
+    const todayStr = getTodayDateString(); // 🆕 UTC today
 
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-
-      const dateStr = formatDateForFE(date);
+      const dateStr = addDays(todayStr, -i); // 🆕 UTC date string
       const hasCheckIn = checkInsByDay.has(dateStr);
+      const dateObj = parseDateFromFE(dateStr);
 
       weekProgress.push({
-        date: dateStr, // 🆕 String
-        day: date.toLocaleDateString("id-ID", { weekday: "short" }),
+        date: dateStr,
+        day: dateObj.toLocaleDateString("id-ID", { 
+          weekday: "short",
+          timeZone: "UTC"
+        }),
         completed: hasCheckIn,
-        displayDate: date.toLocaleDateString("id-ID", {
+        displayDate: dateObj.toLocaleDateString("id-ID", {
           day: "numeric",
           month: "short",
+          timeZone: "UTC"
         }),
       });
     }
@@ -189,14 +206,17 @@ export const getWeeklyProgress = asyncHandler(
     const completedDays = weekProgress.filter((day) => day.completed).length;
     const weeklyCompletion = Math.round((completedDays / 7) * 100);
 
+    // Hitung streak real-time (UTC)
+    const streak = await calculateHabitStreakOptimized(habitId);
+
     successResponse(res, "Progress mingguan berhasil diambil", {
       habitId,
       habitTitle: habit.title,
-      startDate: formatDateForFE(habit.startDate), // 🆕 String
+      startDate: formatDateForFE(habit.startDate), // 🆕 UTC string
       weekProgress,
       completedDays,
       weeklyCompletion,
-      streak: habit.currentStreak,
+      streak,
     });
   },
 );
