@@ -288,7 +288,8 @@ router.put(
  * @swagger
  * /habit/{id}:
  *   delete:
- *     summary: Delete habit (soft delete)
+ *     summary: Delete habit (PERMANENT DELETE)
+ *     description: "⚠️ PERINGATAN: Habit akan dihapus permanen beserta semua check-in terkait!"
  *     tags: [Habits]
  *     security:
  *       - bearerAuth: []
@@ -301,7 +302,7 @@ router.put(
  *           format: uuid
  *     responses:
  *       200:
- *         description: Habit deleted successfully
+ *         description: Habit deleted permanently
  *       404:
  *         description: Habit not found
  */

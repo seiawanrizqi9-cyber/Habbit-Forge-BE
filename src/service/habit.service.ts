@@ -219,9 +219,9 @@ export class HabitService implements IHabitService {
     return this.formatHabitResponse(updated);
   }
 
-  async deleteHabit(id: string, userId: string): Promise<HabitResponse> {
-    await this.getHabitById(id, userId);
-    const deleted = await this.habitRepo.update(id, { isActive: false });
+  async deleteHabit(id: string): Promise<HabitResponse> {
+    const deleted = await this.habitRepo.hardDelete(id);
+
     return this.formatHabitResponse(deleted);
   }
 

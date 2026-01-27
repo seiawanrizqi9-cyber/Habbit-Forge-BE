@@ -11,7 +11,7 @@ export interface IHabitRepository {
   findById(id: string): Promise<Habit | null>;
   create(data: Prisma.HabitCreateInput): Promise<Habit>;
   update(id: string, data: Prisma.HabitUpdateInput): Promise<Habit>;
-  softDelete(id: string): Promise<Habit>;
+  hardDelete(id: string): Promise<Habit>;
   toggleActive(id: string): Promise<Habit>;
   readonly prisma: PrismaClient;
 }
@@ -71,12 +71,9 @@ export class HabitRepository implements IHabitRepository {
     });
   }
 
-  async softDelete(id: string): Promise<Habit> {
-    return await this.prismaInstance.habit.update({
+  async hardDelete(id: string): Promise<Habit> {
+    return await this.prismaInstance.habit.delete({
       where: { id },
-      data: {
-        isActive: false,
-      },
     });
   }
 

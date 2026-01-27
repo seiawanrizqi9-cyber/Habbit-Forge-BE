@@ -148,7 +148,7 @@ export class HabitController {
     if (!habitId) throw new Error("Habit ID diperlukan");
 
     const deleted = await this.habitService.deleteHabit(habitId, userId);
-    successResponse(res, "Habit berhasil dihapus", deleted);
+    successResponse(res, "Habit berhasil dihapus permanen", deleted);
   });
 
   toggleHabitHandler = asyncHandler(async (req: Request, res: Response) => {
