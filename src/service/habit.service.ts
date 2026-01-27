@@ -28,7 +28,6 @@ interface FindAllParams {
   search?: { title?: string };
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  includeCheckInsForDate?: string; // ✅ REMOVE unused warning
   showInactive?: boolean;
 }
 
@@ -40,10 +39,7 @@ export interface HabitListResponse {
 }
 
 export interface IHabitService {
-  getAll(
-    params: Omit<FindAllParams, "includeCheckInsForDate">,
-    userId: string,
-  ): Promise<HabitListResponse>;
+  getAll(params: FindAllParams, userId: string): Promise<HabitListResponse>;
   getHabitById(id: string, userId: string): Promise<HabitResponse>;
   createHabit(data: {
     title: string;
@@ -69,11 +65,11 @@ export class HabitService implements IHabitService {
   constructor(private habitRepo: IHabitRepository) {}
 
   getAvailableCategories(): Category[] {
-    return ["HEALTH", "FINANCE", "WORK", "LEARNING", "SOCIAL"]; // ✅ FIX: HEALTH bukan HEALTHY
+    return ["HEALTH", "FINANCE", "WORK", "LEARNING", "SOCIAL"];
   }
 
   async getAll(
-    params: Omit<FindAllParams, "includeCheckInsForDate">,
+    params: FindAllParams,
     userId: string,
   ): Promise<HabitListResponse> {
     const {
@@ -222,29 +218,10 @@ export class HabitService implements IHabitService {
     const todayStr = getTodayDateString();
     const { start, end } = getDateRangeForQuery(todayStr);
 
-    const habits =
-      (await (this.habitRepo as any).prisma?.habit.findMany({
-        where: {
-          userId,
-          isActive: true,
-        },
-        include: {
-          checkIn: {
-            where: {
-              date: {
-                gte: start,
-                lte: end,
-              },
-            },
-            select: {
-              id: true,
-              date: true,
-              note: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      })) || [];
+    const habits = await this.habitRepo.getHabitsWithTodayCheckIns(userId, {
+      start,
+      end,
+    });
 
     return habits.map((habit: any) => ({
       id: habit.id,
