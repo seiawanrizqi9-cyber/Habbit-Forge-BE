@@ -1,4 +1,4 @@
-import type { CheckIn, Prisma } from "@prisma/client";
+import { CheckIn, Prisma } from "@prisma/client";
 import type { ICheckInRepository } from "../repository/checkIn.repository.js";
 import prisma from "../database.js";
 import {
@@ -59,12 +59,14 @@ export class CheckInService implements ICheckInService {
     userId: string;
     date?: string;
   }): Promise<CheckInResponse> {
-    const checkInDateStr = data.date && isValidDateString(data.date)
-      ? data.date
-      : getTodayDateString();
+    const checkInDateStr =
+      data.date && isValidDateString(data.date)
+        ? data.date
+        : getTodayDateString();
 
     const checkInDate = parseDateFromFE(checkInDateStr);
 
+    // Validasi habit masih perlu
     const habit = await prisma.habit.findFirst({
       where: {
         id: data.habitId,
@@ -82,29 +84,30 @@ export class CheckInService implements ICheckInService {
       throw new Error(`Tidak bisa check-in sebelum ${habitStartStr}`);
     }
 
-    const existingCheckIn = await this.checkInRepo.findByDate(
-      data.habitId,
-      checkInDateStr,
-    );
+    try {
+      // 🆕 Langsung create, database constraint akan handle duplikasi
+      const input: Prisma.CheckInCreateInput = {
+        date: checkInDate,
+        habit: { connect: { id: data.habitId } },
+        user: { connect: { id: data.userId } },
+      };
 
-    if (existingCheckIn) {
-      throw new Error(`Sudah check-in pada tanggal ${checkInDateStr}`);
+      if (data.note !== undefined) {
+        input.note = data.note;
+      }
+
+      const checkIn = await this.checkInRepo.create(input);
+      return this.formatCheckInResponse(checkIn);
+    } catch (error) {
+      // 🆕 Tangkap error constraint dari Prisma
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          // P2002 = Unique constraint violation
+          throw new Error(`Sudah check-in pada tanggal ${checkInDateStr}`);
+        }
+      }
+      throw error;
     }
-
-    // 🆕 FIX: Handle undefined untuk note dengan benar
-    const input: Prisma.CheckInCreateInput = {
-      date: checkInDate,
-      habit: { connect: { id: data.habitId } },
-      user: { connect: { id: data.userId } },
-    };
-
-    // 🆕 Tambahkan note hanya jika ada
-    if (data.note !== undefined) {
-      input.note = data.note;
-    }
-
-    const checkIn = await this.checkInRepo.create(input);
-    return this.formatCheckInResponse(checkIn);
   }
 
   async updateCheckIn(
@@ -113,21 +116,21 @@ export class CheckInService implements ICheckInService {
     userId: string,
   ): Promise<CheckInResponse> {
     await this.getCheckInById(id, userId);
-    
+
     // 🆕 FIX: Handle undefined untuk update
     const updateData: Prisma.CheckInUpdateInput = {};
-    
+
     if (data.note !== undefined) {
       updateData.note = data.note;
     }
-    
+
     const updated = await this.checkInRepo.update(id, updateData);
     return this.formatCheckInResponse(updated);
   }
 
   async deleteCheckIn(id: string, userId: string): Promise<CheckInResponse> {
     await this.getCheckInById(id, userId);
-    
+
     const deleted = await this.checkInRepo.delete(id);
     return this.formatCheckInResponse(deleted);
   }
@@ -144,11 +147,11 @@ export class CheckInService implements ICheckInService {
 
     // Type guard untuk relations
     const checkInWithRelations = checkIn as any;
-    
+
     if (checkInWithRelations.habit) {
       response.habit = checkInWithRelations.habit;
     }
-    
+
     if (checkInWithRelations.user) {
       response.user = checkInWithRelations.user;
     }
