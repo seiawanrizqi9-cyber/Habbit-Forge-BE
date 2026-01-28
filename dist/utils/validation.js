@@ -11,9 +11,9 @@ export const validate = (validations) => {
         if (errors.isEmpty()) {
             return next();
         }
-        const errorList = errors.array().map(err => ({
-            field: err.type === 'field' ? err.path : 'unknown',
-            message: err.msg
+        const errorList = errors.array().map((err) => ({
+            field: err.type === "field" ? err.path : "unknown",
+            message: err.msg,
         }));
         return errorResponse(res, "Validasi gagal", 400, errorList);
     };

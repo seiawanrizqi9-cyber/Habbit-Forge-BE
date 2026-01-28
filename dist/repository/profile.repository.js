@@ -5,7 +5,7 @@ export class ProfileRepository {
     }
     async findByUserId(userId) {
         return await this.prisma.profile.findUnique({
-            where: { userId }
+            where: { userId },
         });
     }
     async updateByUserId(userId, data) {
@@ -14,8 +14,8 @@ export class ProfileRepository {
             data: {
                 ...(data.fullName !== undefined && { fullName: data.fullName }),
                 ...(data.bio !== undefined && { bio: data.bio }),
-                ...(data.avatar !== undefined && { avatar: data.avatar })
-            }
+                ...(data.avatar !== undefined && { avatar: data.avatar }),
+            },
         });
     }
 }

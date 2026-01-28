@@ -1,16 +1,16 @@
 import prisma from "../database.js";
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import config from '../utils/env.js';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import config from "../utils/env.js";
 export class UserService {
     async register(data) {
         const existingUser = await prisma.user.findUnique({
-            where: { email: data.email }
+            where: { email: data.email },
         });
         if (existingUser)
             throw new Error("Email sudah terdaftar");
         const existingUsername = await prisma.user.findUnique({
-            where: { username: data.username }
+            where: { username: data.username },
         });
         if (existingUsername)
             throw new Error("Username sudah terdaftar");
@@ -20,20 +20,20 @@ export class UserService {
                 email: data.email,
                 username: data.username,
                 password: hashedPassword,
-                profile: { create: { fullName: data.username } }
+                profile: { create: { fullName: data.username } },
             },
-            include: { profile: true }
+            include: { profile: true },
         });
         const token = this.generateToken(user.id, user.email, user.username);
         return {
             user: this.formatUserResponse(user),
-            token
+            token,
         };
     }
     async login(data) {
         const user = await prisma.user.findUnique({
             where: { email: data.email },
-            include: { profile: true }
+            include: { profile: true },
         });
         if (!user)
             throw new Error("Email atau password salah");
@@ -43,7 +43,7 @@ export class UserService {
         const token = this.generateToken(user.id, user.email, user.username);
         return {
             user: this.formatUserResponse(user),
-            token
+            token,
         };
     }
     async getCurrentUser(userId) {
@@ -55,8 +55,8 @@ export class UserService {
                 username: true,
                 createdAt: true,
                 updatedAt: true,
-                profile: true
-            }
+                profile: true,
+            },
         });
         if (!user)
             throw new Error("User tidak ditemukan");
@@ -67,8 +67,8 @@ export class UserService {
             id: userId,
             email: email,
             username: username,
-            role: 'user'
-        }, config.JWT_SECRET, { expiresIn: '7d' });
+            role: "user",
+        }, config.JWT_SECRET, { expiresIn: "7d" });
     }
     formatUserResponse(user) {
         return {
@@ -76,7 +76,7 @@ export class UserService {
             email: user.email,
             username: user.username,
             profile: user.profile,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
         };
     }
 }

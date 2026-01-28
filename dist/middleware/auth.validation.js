@@ -27,7 +27,5 @@ export const loginValidation = [
         .isEmail()
         .withMessage("Format email tidak valid")
         .normalizeEmail(),
-    body("password")
-        .notEmpty()
-        .withMessage("Password diperlukan"),
+    body("password").notEmpty().withMessage("Password diperlukan"),
 ];

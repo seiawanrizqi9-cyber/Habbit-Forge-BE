@@ -1,5 +1,6 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../database.js";
-import { getTodayRange } from "../utils/timeUtils.js";
+import { parseDateFromFE, formatDateForFE, getTodayDateString, isValidDateString, } from "../utils/timeUtils.js";
 export class CheckInService {
     checkInRepo;
     constructor(checkInRepo) {
@@ -10,56 +11,86 @@ export class CheckInService {
         if (!checkIn) {
             throw new Error("CheckIn tidak ditemukan");
         }
-        // Auto-validate ownership
         if (checkIn.userId !== userId) {
-            throw new Error("CheckIn tidak ditemukan");
+            throw new Error("Akses ditolak");
         }
-        return checkIn;
+        return this.formatCheckInResponse(checkIn);
     }
     async createCheckIn(data) {
-        const { start, end } = getTodayRange();
-        // Validasi: Habit harus milik user DAN aktif
+        const checkInDateStr = data.date && isValidDateString(data.date)
+            ? data.date
+            : getTodayDateString(); // 🆕 UTC date string
+        const checkInDate = parseDateFromFE(checkInDateStr); // 🆕 UTC Date
+        // Validasi habit exists, active, dan milik user
         const habit = await prisma.habit.findFirst({
             where: {
                 id: data.habitId,
                 userId: data.userId,
-                isActive: true
-            }
+                isActive: true,
+            },
         });
         if (!habit) {
             throw new Error("Habit tidak ditemukan atau tidak aktif");
         }
-        // Cek apakah sudah check-in hari ini
-        const existingCheckIn = await prisma.checkIn.findFirst({
-            where: {
-                habitId: data.habitId,
-                userId: data.userId,
-                date: {
-                    gte: start,
-                    lte: end
+        // Validasi habit start date (UTC comparison)
+        if (checkInDate < habit.startDate) {
+            const habitStartStr = formatDateForFE(habit.startDate);
+            throw new Error(`Tidak bisa check-in sebelum ${habitStartStr}`);
+        }
+        try {
+            // Database constraint akan handle race condition & duplikasi
+            const input = {
+                date: checkInDate,
+                habit: { connect: { id: data.habitId } },
+                user: { connect: { id: data.userId } },
+            };
+            if (data.note !== undefined) {
+                input.note = data.note;
+            }
+            const checkIn = await this.checkInRepo.create(input);
+            return this.formatCheckInResponse(checkIn);
+        }
+        catch (error) {
+            // Tangkap Prisma constraint violation error
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === "P2002") {
+                    throw new Error(`Sudah check-in pada tanggal ${checkInDateStr}`);
                 }
             }
-        });
-        if (existingCheckIn) {
-            throw new Error("Sudah check-in hari ini");
+            throw error;
         }
-        // Buat check-in
-        const input = {
-            date: new Date(), // Waktu sekarang (WIB)
-            note: data.note,
-            habit: { connect: { id: data.habitId } },
-            user: { connect: { id: data.userId } },
-        };
-        return await this.checkInRepo.create(input);
     }
     async updateCheckIn(id, data, userId) {
-        // Validasi ownership
         await this.getCheckInById(id, userId);
-        return await this.checkInRepo.update(id, data);
+        const updateData = {};
+        if (data.note !== undefined) {
+            updateData.note = data.note;
+        }
+        const updated = await this.checkInRepo.update(id, updateData);
+        return this.formatCheckInResponse(updated);
     }
     async deleteCheckIn(id, userId) {
-        // Validasi ownership
         await this.getCheckInById(id, userId);
-        return await this.checkInRepo.softDelete(id);
+        const deleted = await this.checkInRepo.delete(id);
+        return this.formatCheckInResponse(deleted);
+    }
+    formatCheckInResponse(checkIn) {
+        const response = {
+            id: checkIn.id,
+            habitId: checkIn.habitId,
+            userId: checkIn.userId,
+            date: formatDateForFE(checkIn.date), // 🆕 UTC to string
+            note: checkIn.note,
+            createdAt: checkIn.createdAt,
+        };
+        // Include relations jika ada
+        const checkInWithRelations = checkIn;
+        if (checkInWithRelations.habit) {
+            response.habit = checkInWithRelations.habit;
+        }
+        if (checkInWithRelations.user) {
+            response.user = checkInWithRelations.user;
+        }
+        return response;
     }
 }

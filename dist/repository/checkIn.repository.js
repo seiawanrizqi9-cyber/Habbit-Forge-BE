@@ -1,4 +1,4 @@
-import { getStartOfDate } from "../utils/timeUtils.js";
+import { getDateRangeForQuery } from "../utils/timeUtils.js";
 export class CheckInRepository {
     prisma;
     constructor(prisma) {
@@ -18,25 +18,21 @@ export class CheckInRepository {
     }
     async findById(id) {
         return await this.prisma.checkIn.findUnique({
-            where: {
-                id,
-            },
+            where: { id },
             include: {
                 habit: true,
                 user: true,
             },
         });
     }
-    async findTodayCheckIn(habitId, date) {
-        const startOfDay = getStartOfDate(date);
-        const endOfDay = new Date(startOfDay);
-        endOfDay.setHours(23, 59, 59, 999);
+    async findByDate(habitId, dateString) {
+        const { start, end } = getDateRangeForQuery(dateString);
         return await this.prisma.checkIn.findFirst({
             where: {
                 habitId,
                 date: {
-                    gte: startOfDay,
-                    lte: endOfDay,
+                    gte: start,
+                    lte: end,
                 },
             },
         });
@@ -46,18 +42,13 @@ export class CheckInRepository {
     }
     async update(id, data) {
         return await this.prisma.checkIn.update({
-            where: {
-                id,
-            },
+            where: { id },
             data,
         });
     }
-    async softDelete(id) {
-        return await this.prisma.checkIn.update({
-            where: {
-                id,
-            },
-            data: {},
+    async delete(id) {
+        return await this.prisma.checkIn.delete({
+            where: { id },
         });
     }
 }

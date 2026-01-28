@@ -11,19 +11,14 @@ export const createHabitValidation = [
         .trim()
         .isLength({ max: 500 })
         .withMessage("Deskripsi maksimal 500 karakter"),
-    body("isActive")
-        .optional()
-        .isBoolean()
-        .withMessage("isActive harus boolean"),
+    body("isActive").optional().isBoolean().withMessage("isActive harus boolean"),
     body("categoryId")
         .optional()
         .isUUID()
         .withMessage("Category ID harus format UUID valid"),
 ];
 export const updateHabitValidation = [
-    param("id")
-        .isUUID()
-        .withMessage("Habit ID harus format UUID"),
+    param("id").isUUID().withMessage("Habit ID harus format UUID"),
     body("title")
         .optional()
         .trim()
@@ -34,10 +29,7 @@ export const updateHabitValidation = [
         .trim()
         .isLength({ max: 500 })
         .withMessage("Deskripsi maksimal 500 karakter"),
-    body("isActive")
-        .optional()
-        .isBoolean()
-        .withMessage("isActive harus boolean"),
+    body("isActive").optional().isBoolean().withMessage("isActive harus boolean"),
     body("categoryId")
         .optional()
         .isUUID()

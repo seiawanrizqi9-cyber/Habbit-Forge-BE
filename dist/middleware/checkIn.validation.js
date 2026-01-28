@@ -5,6 +5,10 @@ export const createCheckInValidation = [
         .withMessage("Habit ID diperlukan")
         .isUUID()
         .withMessage("Habit ID harus format UUID"),
+    body("date")
+        .optional()
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage("Format tanggal harus YYYY-MM-DD"),
     body("note")
         .optional()
         .trim()
@@ -12,9 +16,7 @@ export const createCheckInValidation = [
         .withMessage("Catatan maksimal 500 karakter"),
 ];
 export const updateCheckInValidation = [
-    param("id")
-        .isUUID()
-        .withMessage("CheckIn ID harus format UUID"),
+    param("id").isUUID().withMessage("CheckIn ID harus format UUID"),
     body("note")
         .optional()
         .trim()

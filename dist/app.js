@@ -11,7 +11,6 @@ import swaggerSpec from "./utils/swagger.js";
 import { successResponse } from "./utils/response.js";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
-import categoryRoutes from "./routes/category.route.js";
 import habitRoutes from "./routes/habit.route.js";
 import checkInRoutes from "./routes/checkIn.route.js";
 import profileRoutes from "./routes/profile.route.js";
@@ -52,7 +51,6 @@ app.get("/", (_req, res) => {
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/category", categoryRoutes);
 app.use("/api/habit", habitRoutes);
 app.use("/api/checkIn", checkInRoutes);
 app.use("/api/profile", profileRoutes);
