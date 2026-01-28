@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient, CheckIn } from "@prisma/client";
-import { getStartOfDay } from "../utils/timeUtils.js";
+import { getDateRangeForQuery } from "../utils/timeUtils.js";
 
 export interface ICheckInRepository {
   list(
@@ -46,13 +46,19 @@ export class CheckInRepository implements ICheckInRepository {
     });
   }
 
-  async findByDate(habitId: string, dateString: string): Promise<CheckIn | null> {
-    const date = getStartOfDay(dateString);
-    
+  async findByDate(
+    habitId: string,
+    dateString: string,
+  ): Promise<CheckIn | null> {
+    const { start, end } = getDateRangeForQuery(dateString);
+
     return await this.prisma.checkIn.findFirst({
       where: {
         habitId,
-        date,
+        date: {
+          gte: start,
+          lte: end,
+        },
       },
     });
   }

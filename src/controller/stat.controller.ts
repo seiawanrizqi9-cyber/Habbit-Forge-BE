@@ -2,8 +2,8 @@ import type { Request, Response } from "express";
 import prisma from "../database.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/response.js";
-import { 
-  formatDateForFE, 
+import {
+  formatDateForFE,
   parseDateFromFE,
   addDays,
   getTodayDateString,
@@ -42,11 +42,9 @@ export const getMonthlyStats = asyncHandler(
     if (!userId) throw new Error("Unauthorized");
 
     const today = new Date();
-    const firstDay = new Date(Date.UTC(
-      today.getUTCFullYear(), 
-      today.getUTCMonth(), 
-      1
-    ));
+    const firstDay = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1),
+    );
 
     const habits = await prisma.habit.count({
       where: { userId, isActive: true },
@@ -60,7 +58,8 @@ export const getMonthlyStats = asyncHandler(
     });
 
     const days = today.getUTCDate(); // 🆕 UTC day
-    const completion = habits > 0 ? Math.round((checkIns / (habits * days)) * 100) : 0;
+    const completion =
+      habits > 0 ? Math.round((checkIns / (habits * days)) * 100) : 0;
 
     // Ambil semua habits aktif untuk hitung streak
     const allHabits = await prisma.habit.findMany({
@@ -72,9 +71,7 @@ export const getMonthlyStats = asyncHandler(
         id: true,
         title: true,
         startDate: true,
-        category: {
-          select: { name: true, color: true },
-        },
+        category: true, // ✅ Langsung enum value
       },
     });
 
@@ -86,11 +83,10 @@ export const getMonthlyStats = asyncHandler(
           id: habit.id,
           title: habit.title,
           streak,
-          startDate: formatDateForFE(habit.startDate), // 🆕 UTC string
-          category: habit.category?.name || "No category",
-          color: habit.category?.color || "#6B7280",
+          startDate: formatDateForFE(habit.startDate),
+          category: habit.category || "No category", // ✅ Langsung enum value
         };
-      })
+      }),
     );
 
     // Sort by streak desc dan ambil top 3
@@ -190,15 +186,15 @@ export const getWeeklyProgress = asyncHandler(
 
       weekProgress.push({
         date: dateStr,
-        day: dateObj.toLocaleDateString("id-ID", { 
+        day: dateObj.toLocaleDateString("id-ID", {
           weekday: "short",
-          timeZone: "UTC"
+          timeZone: "UTC",
         }),
         completed: hasCheckIn,
         displayDate: dateObj.toLocaleDateString("id-ID", {
           day: "numeric",
           month: "short",
-          timeZone: "UTC"
+          timeZone: "UTC",
         }),
       });
     }

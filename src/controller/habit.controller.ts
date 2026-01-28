@@ -31,7 +31,6 @@ export class HabitController {
         search,
         sortBy,
         sortOrder,
-        includeCheckInsForDate: date,
         showInactive,
       },
       userId,
