@@ -1,9 +1,10 @@
 import { Frequency, Category } from "@prisma/client";
 import { hash } from "bcrypt";
 import {
-  parseDateFromFE,
-  getTodayDateString,
-  getYesterdayDateString,
+  parseDateToUTC,
+  getTodayInWIB,
+  getYesterdayDateInWIB,
+  convertWIBStringToUTC,
 } from "../utils/timeUtils.js";
 import prisma from "../database.js";
 
@@ -51,15 +52,15 @@ async function main() {
     },
   });
 
-  // Create habits (direct enum assignment)
+  // Create habits
   console.log("🎯 Seeding habits...");
 
   // Habit 1: John - Health
   await prisma.habit.create({
     data: {
       title: "Minum Air 8 Gelas",
-      description: "Minum minimal 8 gelas air setiap hari",
-      startDate: parseDateFromFE("2024-01-01"),
+      description: "Minimal 8 gelas air setiap hari",
+      startDate: parseDateToUTC("2024-01-01"),
       frequency: Frequency.DAILY,
       userId: john.id,
       category: Category.HEALTH,
@@ -71,7 +72,7 @@ async function main() {
     data: {
       title: "Baca Buku",
       description: "Baca minimal 10 halaman buku setiap hari",
-      startDate: parseDateFromFE("2024-01-03"),
+      startDate: parseDateToUTC("2024-01-03"),
       frequency: Frequency.DAILY,
       userId: john.id,
       category: Category.LEARNING,
@@ -83,7 +84,7 @@ async function main() {
     data: {
       title: "Meditasi Pagi",
       description: "Meditasi 10 menit setiap pagi",
-      startDate: parseDateFromFE("2024-01-04"),
+      startDate: parseDateToUTC("2024-01-04"),
       frequency: Frequency.DAILY,
       userId: jane.id,
       category: Category.HEALTH,
@@ -95,7 +96,7 @@ async function main() {
     data: {
       title: "Catat Pengeluaran",
       description: "Mencatat semua pengeluaran harian",
-      startDate: parseDateFromFE("2024-01-05"),
+      startDate: parseDateToUTC("2024-01-05"),
       frequency: Frequency.WEEKLY,
       userId: jane.id,
       category: Category.FINANCE,
@@ -104,8 +105,8 @@ async function main() {
 
   // Create check-ins
   console.log("✅ Seeding check-ins...");
-  const today = new Date(getTodayDateString());
-  const yesterday = new Date(getYesterdayDateString());
+  const todayWIB = getTodayInWIB();
+  const yesterdayWIB = getYesterdayDateInWIB();
 
   // Get habits for check-ins
   const habits = await prisma.habit.findMany();
@@ -123,20 +124,22 @@ async function main() {
   );
 
   if (johnHealthHabit) {
+    // Today check-in
     await prisma.checkIn.create({
       data: {
         habitId: johnHealthHabit.id,
         userId: john.id,
-        date: today,
+        date: convertWIBStringToUTC(todayWIB),
         note: "Sudah minum 8 gelas hari ini",
       },
     });
 
+    // Yesterday check-in
     await prisma.checkIn.create({
       data: {
         habitId: johnHealthHabit.id,
         userId: john.id,
-        date: yesterday,
+        date: convertWIBStringToUTC(yesterdayWIB),
         note: null,
       },
     });
@@ -147,7 +150,7 @@ async function main() {
       data: {
         habitId: johnLearningHabit.id,
         userId: john.id,
-        date: today,
+        date: convertWIBStringToUTC(todayWIB),
         note: "Baca chapter 5",
       },
     });
@@ -158,7 +161,7 @@ async function main() {
       data: {
         habitId: janeHealthHabit.id,
         userId: jane.id,
-        date: today,
+        date: convertWIBStringToUTC(todayWIB),
         note: "Meditasi pagi hari",
       },
     });
